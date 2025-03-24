@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { Session, User } from '@supabase/supabase-js';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
@@ -36,69 +36,75 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Check for existing session
   useEffect(() => {
-    // בדיקת סשן נוכחי בעת טעינת האתר
+    setLoading(true);
+    
+    // Get the current session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        const userData: User = {
-          id: session.user.id,
-          email: session.user.user_metadata.email,
-          name: session.user.user_metadata.user_name,
-          isAdmin: session.user.user_metadata.isAdmin || false
-        };
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+        handleSession(session);
       }
       setLoading(false);
     });
 
-    // האזנה לשינויים במצב ההתחברות
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        const userData: User = {
-          id: session.user.id,
-          email: session.user.user_metadata.email,
-          name: session.user.user_metadata.user_name,
-          isAdmin: session.user.user_metadata.isAdmin || false
-        };
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-      } else {
-        setUser(null);
-        localStorage.removeItem('user');
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (session) {
+          handleSession(session);
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    );
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Handle a valid session
+  const handleSession = async (session: Session) => {
+    try {
+      // Check if user is an admin via stored metadata
+      const isAdmin = !!session.user?.user_metadata?.is_admin || 
+                     session.user?.email === 'zaviner@gmail.com';
+
+      // Create user object from session
+      const userData: User = {
+        id: session.user.id,
+        email: session.user.email || '',
+        name: session.user?.user_metadata?.name || '',
+        isAdmin: isAdmin,
+      };
+
+      setUser(userData);
+
+      // Store admin status in user metadata if needed
+      if (isAdmin && !session.user?.user_metadata?.is_admin) {
+        await supabase.auth.updateUser({
+          data: { is_admin: true }
+        });
+      }
+
+    } catch (error) {
+      console.error('Error handling session:', error);
+      setUser(null);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
       
-      // In a real app, this would be an API call to authenticate
-      // Mocking login for now
+      // Sign in with Supabase
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
       
-      // Special check for admin
-      const isAdmin = email.toLowerCase() === 'zaviner@gmail.com';
+      if (error) throw error;
       
-      // Mock successful login
-      const userData: User = {
-        id: 'user-' + Math.random().toString(36).substr(2, 9),
-        email: email,
-        name: '',
-        isAdmin: isAdmin
-      };
-      
-      // Save user data
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-      
-      // Send notification email if admin and it's a real implementation
-      if (isAdmin) {
-        console.log('Admin logged in');
-      }
     } catch (error) {
       console.error('Login error:', error);
       throw error;
@@ -111,23 +117,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
       
-      // In a real app, this would be an API call to register
-      // Mocking registration for now
+      // Register with Supabase
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name,
+            is_admin: email.toLowerCase() === 'zaviner@gmail.com',
+          },
+        },
+      });
       
-      // Special check for admin
-      const isAdmin = email.toLowerCase() === 'zaviner@gmail.com';
+      if (error) throw error;
       
-      // Mock successful registration
-      const userData: User = {
-        id: 'user-' + Math.random().toString(36).substr(2, 9),
-        email: email,
-        name: name,
-        isAdmin: isAdmin
-      };
-      
-      // Save user data
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
@@ -136,10 +139,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    navigate('/');
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const isAdmin = user?.isAdmin || false;
