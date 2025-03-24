@@ -22,22 +22,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-
-const neighborhoods = [
-  "ארמון הנציב - תלפ״ז", "ארנונה", "בית הכרם", "בית וגן", "בקעה", 
-  "גבעת מרדכי", "גבעת משואה", "גילה", "הגבעה הצרפתית", "הולילנד",
-  "הר חומה", "הר נוף", "הרובע היהודי העיר העתיקה", "טלביה", "מלחה",
-  "מרכז העיר - נחלת שבעה", "משכנות האומה", "נווה יעקב", "נחלאות", "ניות",
-  "עמק רפאים - המושבה הגרמנית", "פסגת זאב", "קטמון א-ו | גוננים | קטמונים",
-  "קטמון הישנה", "קטמונים ו'", "קרית היובל", "קרית מנחם | עיר גנים",
-  "קרית משה | גבעת שאול", "רחביה", "רמות אלון", "רמות אשכול",
-  "רמת בית הכרם", "רמת שרת | רמת דניה", "שכונת רסקו", "תלפיות"
-];
-
-const categories = [
-  "בגדים", "ספרים", "ריהוט", "מוצרי תינוקות", "כלי בית", "סיוע רפואי",
-  "מוצרי מזון", "ציוד חשמלי", "עזרה לחתן וכלה", "ציוד לימודי", "אחר"
-];
+import { neighborhoods, categories } from '@/data/constants';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "שם הגמ״ח חייב להיות לפחות 2 תווים" }),
@@ -66,34 +51,7 @@ const RegisterGemach = () => {
   const { user, isLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-      has_fee: false,
-      fee_details: '',
-      address: '',
-      location_instructions: '',
-      phone: '',
-      manager_phone: '',
-      phone_alternative: '',
-      email: '',
-      hours: '',
-      website_url: '',
-      facebook_url: '',
-    },
-  });
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      // Convert FileList to array and limit to 3 files
-      const fileArray = Array.from(files).slice(0, 3);
-      setSelectedFiles(fileArray);
-    }
-  };
+  const { register, handleSubmit, setValue, watch, formState: { isSubmitting: formSubmitting } } = useForm<FormData>();
 
   const onSubmit = async (data: FormData) => {
     if (!user) {
@@ -109,70 +67,29 @@ const RegisterGemach = () => {
     setIsSubmitting(true);
     
     try {
-      // Insert gemach into database
-      const { data: gemachData, error: gemachError } = await supabase
-        .from('gemachs')
-        .insert({
-          owner_id: user.id,
-          name: data.name,
-          category: data.category,
-          description: data.description,
-          address: data.address,
-          neighborhood: data.neighborhood,
-          location_instructions: data.location_instructions || null,
-          phone: data.phone,
-          manager_phone: data.manager_phone || null,
-          email: data.email || null,
-          hours: data.hours,
-          has_fee: data.has_fee,
-          fee_details: data.fee_details || null,
-          website_url: data.website_url || null,
-          facebook_url: data.facebook_url || null,
-        })
-        .select('id')
-        .single();
-
-      if (gemachError) {
-        throw new Error(gemachError.message);
-      }
-
-      // Upload images if any were selected
-      if (selectedFiles.length > 0 && gemachData) {
-        for (let i = 0; i < selectedFiles.length; i++) {
-          const file = selectedFiles[i];
-          const fileExt = file.name.split('.').pop();
-          const fileName = `${gemachData.id}/${Date.now()}.${fileExt}`;
-          const filePath = `${fileName}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('gemach-images')
-            .upload(filePath, file);
-            
-          if (uploadError) {
-            console.error('Error uploading image:', uploadError);
-            continue;
-          }
-          
-          // Get the public URL for the uploaded image
-          const { data: urlData } = supabase.storage
-            .from('gemach-images')
-            .getPublicUrl(filePath);
-            
-          // Insert image record
-          const { error: imageError } = await supabase
-            .from('gemach_images')
-            .insert({
-              gemach_id: gemachData.id,
-              storage_path: filePath,
-              is_primary: i === 0 // First image is primary
-            });
-            
-          if (imageError) {
-            console.error('Error saving image record:', imageError);
-          }
+      const formDataToSend = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== null) {
+          formDataToSend.append(key, value);
         }
+      });
+
+      // Add images
+      if (selectedFiles.length > 0) {
+        selectedFiles.forEach((file, index) => {
+          formDataToSend.append(`images`, file);
+        });
       }
-      
+
+      const response = await fetch('/api/gemachs', {
+        method: 'POST',
+        body: formDataToSend
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to register gemach');
+      }
+
       toast({
         title: "הגמ״ח נרשם בהצלחה!",
         description: "תודה שבחרת להרשם במרכז הגמ״חים. הפרטים יועברו לצוות לבדיקה.",
@@ -182,7 +99,7 @@ const RegisterGemach = () => {
         navigate('/registration-success');
       }, 2000);
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('Error registering gemach:', error);
       toast({
         title: "שגיאה ברישום הגמ״ח",
         description: error instanceof Error ? error.message : "אירעה שגיאה בעת רישום הגמ״ח. אנא נסו שנית מאוחר יותר.",
@@ -191,6 +108,11 @@ const RegisterGemach = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setSelectedFiles(files);
   };
 
   return (
@@ -202,17 +124,14 @@ const RegisterGemach = () => {
           <div className="max-w-2xl mx-auto">
             <h1 className="text-3xl font-bold text-center mb-8">רישום גמ״ח חדש</h1>
             
-            <form onSubmit={form.handleSubmit(onSubmit)} className="bg-white rounded-lg shadow-sm p-6 space-y-6">
+            <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-lg shadow-sm p-6 space-y-6">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                   שם הגמ״ח
                 </label>
                 <Input
                   id="name"
-                  name="name"
-                  value={form.watch('name')}
-                  onChange={form.handleChange('name')}
-                  required
+                  {...register('name', { required: true })}
                 />
               </div>
 
@@ -221,8 +140,7 @@ const RegisterGemach = () => {
                   קטגוריה
                 </label>
                 <Select 
-                  value={form.watch('category')} 
-                  onValueChange={form.handleChange('category')}
+                  onValueChange={(value) => setValue('category', value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="בחר קטגוריה" />
@@ -242,8 +160,7 @@ const RegisterGemach = () => {
                   שכונה
                 </label>
                 <Select 
-                  value={form.watch('neighborhood')} 
-                  onValueChange={form.handleChange('neighborhood')}
+                  onValueChange={(value) => setValue('neighborhood', value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="בחר שכונה" />
@@ -264,10 +181,7 @@ const RegisterGemach = () => {
                 </label>
                 <Input
                   id="address"
-                  name="address"
-                  value={form.watch('address')}
-                  onChange={form.handleChange('address')}
-                  required
+                  {...register('address', { required: true })}
                 />
               </div>
 
@@ -277,11 +191,8 @@ const RegisterGemach = () => {
                 </label>
                 <Input
                   id="phone"
-                  name="phone"
                   type="tel"
-                  value={form.watch('phone')}
-                  onChange={form.handleChange('phone')}
-                  required
+                  {...register('phone', { required: true })}
                 />
               </div>
 
@@ -291,10 +202,7 @@ const RegisterGemach = () => {
                 </label>
                 <Input
                   id="hours"
-                  name="hours"
-                  value={form.watch('hours')}
-                  onChange={form.handleChange('hours')}
-                  required
+                  {...register('hours', { required: true })}
                 />
               </div>
 
@@ -304,11 +212,8 @@ const RegisterGemach = () => {
                 </label>
                 <Textarea
                   id="description"
-                  name="description"
-                  value={form.watch('description')}
-                  onChange={form.handleChange('description')}
+                  {...register('description', { required: true })}
                   rows={4}
-                  required
                 />
               </div>
 
@@ -318,7 +223,6 @@ const RegisterGemach = () => {
                 </label>
                 <Input
                   id="image"
-                  name="images"
                   type="file"
                   accept="image/*"
                   multiple
@@ -330,9 +234,9 @@ const RegisterGemach = () => {
                 <Button 
                   type="submit"
                   className="w-full md:w-auto px-8"
-                  disabled={isSubmitting}
+                  disabled={formSubmitting}
                 >
-                  {isSubmitting ? 'שולח...' : 'רישום הגמ״ח'}
+                  {formSubmitting ? 'שולח...' : 'רישום הגמ״ח'}
                 </Button>
               </div>
             </form>
