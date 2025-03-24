@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,13 +13,13 @@ import { Pencil, Trash2, Eye, Check, X, Bell } from 'lucide-react';
 
 // Types
 interface GemachItem {
-  id: number;
+  id: string;
   name: string;
   category: string;
   neighborhood: string;
-  createdAt: string;
+  created_at: string;
   status: 'pending' | 'approved' | 'rejected';
-  createdBy: string;
+  owner_id: string;
 }
 
 const Dashboard = () => {
@@ -40,76 +41,37 @@ const Dashboard = () => {
   // Load gemachs data
   useEffect(() => {
     const loadGemachs = async () => {
+      if (!user) return;
+      
       try {
         setLoading(true);
         
-        // This would be an API call in a real app
-        // For demo, let's create some mock data
-
-        // Mock data for user's gemachs
-        const mockUserGemachs: GemachItem[] = [
-          {
-            id: 1,
-            name: 'גמ"ח ציוד רפואי',
-            category: 'סיוע רפואי',
-            neighborhood: 'רמות',
-            createdAt: '2023-05-15',
-            status: 'approved',
-            createdBy: user?.id || '',
-          },
-          {
-            id: 2,
-            name: 'גמ"ח ספרי לימוד',
-            category: 'ספרים',
-            neighborhood: 'הר נוף',
-            createdAt: '2023-06-20',
-            status: 'pending',
-            createdBy: user?.id || '',
-          }
-        ];
-
-        // Mock data for pending gemachs (admin only)
-        const mockPendingGemachs: GemachItem[] = [
-          {
-            id: 3,
-            name: 'גמ"ח כלי עבודה',
-            category: 'כלי בית',
-            neighborhood: 'בית וגן',
-            createdAt: '2023-06-25',
-            status: 'pending',
-            createdBy: 'user-abc123',
-          },
-          {
-            id: 4,
-            name: 'גמ"ח שמלות כלה',
-            category: 'עזרה לחתן וכלה',
-            neighborhood: 'גאולה',
-            createdAt: '2023-06-28',
-            status: 'pending',
-            createdBy: 'user-def456',
-          }
-        ];
-
-        // Mock data for all gemachs (admin only)
-        const mockAllGemachs: GemachItem[] = [
-          ...mockUserGemachs,
-          ...mockPendingGemachs,
-          {
-            id: 5,
-            name: 'גמ"ח ריהוט',
-            category: 'ריהוט',
-            neighborhood: 'קרית משה',
-            createdAt: '2023-05-10',
-            status: 'approved',
-            createdBy: 'user-ghi789',
-          }
-        ];
-
-        setUserGemachs(mockUserGemachs);
+        // Load user's gemachs
+        const { data: userGemachsData, error: userGemachsError } = await supabase
+          .from('gemachs')
+          .select('*')
+          .eq('owner_id', user.id);
+          
+        if (userGemachsError) throw userGemachsError;
+        setUserGemachs(userGemachsData || []);
         
+        // Load pending gemachs (admin only)
         if (isAdmin) {
-          setPendingGemachs(mockPendingGemachs);
-          setAllGemachs(mockAllGemachs);
+          const { data: pendingGemachsData, error: pendingGemachsError } = await supabase
+            .from('gemachs')
+            .select('*')
+            .eq('is_approved', false);
+            
+          if (pendingGemachsError) throw pendingGemachsError;
+          setPendingGemachs(pendingGemachsData || []);
+          
+          // Load all gemachs (admin only)
+          const { data: allGemachsData, error: allGemachsError } = await supabase
+            .from('gemachs')
+            .select('*');
+            
+          if (allGemachsError) throw allGemachsError;
+          setAllGemachs(allGemachsData || []);
         }
       } catch (error) {
         console.error('Error loading gemachs:', error);
@@ -124,18 +86,23 @@ const Dashboard = () => {
   }, [user, isAdmin]);
 
   // Handle Edit Gemach
-  const handleEdit = (id: number) => {
+  const handleEdit = (id: string) => {
     navigate(`/edit-gemach/${id}`);
   };
 
   // Handle Delete Gemach
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     if (window.confirm('האם אתה בטוח שברצונך למחוק את הגמ"ח הזה?')) {
       try {
-        // This would be an API call in a real app
-        // For demo, let's update the state directly
-        setUserGemachs(userGemachs.filter(gemach => gemach.id !== id));
+        const { error } = await supabase
+          .from('gemachs')
+          .delete()
+          .eq('id', id);
+          
+        if (error) throw error;
         
+        // Update local state after successful deletion
+        setUserGemachs(userGemachs.filter(gemach => gemach.id !== id));
         if (isAdmin) {
           setPendingGemachs(pendingGemachs.filter(gemach => gemach.id !== id));
           setAllGemachs(allGemachs.filter(gemach => gemach.id !== id));
@@ -147,10 +114,16 @@ const Dashboard = () => {
   };
 
   // Handle Approve Gemach (admin only)
-  const handleApprove = async (id: number) => {
+  const handleApprove = async (id: string) => {
     try {
-      // This would be an API call in a real app
-      // For demo, let's update the state directly
+      const { error } = await supabase
+        .from('gemachs')
+        .update({ is_approved: true })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update local state after successful approval
       setPendingGemachs(pendingGemachs.filter(gemach => gemach.id !== id));
       
       setAllGemachs(allGemachs.map(gemach => 
@@ -167,10 +140,16 @@ const Dashboard = () => {
   };
 
   // Handle Reject Gemach (admin only)
-  const handleReject = async (id: number) => {
+  const handleReject = async (id: string) => {
     try {
-      // This would be an API call in a real app
-      // For demo, let's update the state directly
+      const { error } = await supabase
+        .from('gemachs')
+        .update({ is_approved: false })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update local state after successful rejection
       setPendingGemachs(pendingGemachs.filter(gemach => gemach.id !== id));
       
       setAllGemachs(allGemachs.map(gemach => 
@@ -187,7 +166,7 @@ const Dashboard = () => {
   };
 
   // Handle View Gemach Details
-  const handleViewDetails = (id: number) => {
+  const handleViewDetails = (id: string) => {
     navigate(`/gemach/${id}`);
   };
 
@@ -212,53 +191,64 @@ const Dashboard = () => {
     }
   };
 
+  // Convert Supabase is_approved field to status
+  const getStatusFromGemach = (gemach: any): 'pending' | 'approved' | 'rejected' => {
+    if (gemach.is_approved === true) return 'approved';
+    if (gemach.is_approved === false) return 'rejected';
+    return 'pending';
+  };
+
   // Render gemach card
-  const renderGemachCard = (gemach: GemachItem, isAdmin = false) => (
-    <Card key={gemach.id} className="mb-4">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <CardTitle>{gemach.name}</CardTitle>
-          {renderStatusBadge(gemach.status)}
-        </div>
-        <CardDescription>
-          <div className="flex flex-col gap-1 mt-2">
-            <div>קטגוריה: {gemach.category}</div>
-            <div>שכונה: {gemach.neighborhood}</div>
-            <div>נוצר בתאריך: {gemach.createdAt}</div>
+  const renderGemachCard = (gemach: any, isAdmin = false) => {
+    const status = getStatusFromGemach(gemach);
+    
+    return (
+      <Card key={gemach.id} className="mb-4">
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <CardTitle>{gemach.name}</CardTitle>
+            {renderStatusBadge(status)}
           </div>
-        </CardDescription>
-      </CardHeader>
-      <CardFooter className="flex justify-between">
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => handleViewDetails(gemach.id)}>
-            <Eye className="h-4 w-4 ml-1" />
-            צפייה
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => handleEdit(gemach.id)}>
-            <Pencil className="h-4 w-4 ml-1" />
-            עריכה
-          </Button>
-          <Button size="sm" variant="outline" className="text-red-600" onClick={() => handleDelete(gemach.id)}>
-            <Trash2 className="h-4 w-4 ml-1" />
-            מחיקה
-          </Button>
-        </div>
-        
-        {isAdmin && gemach.status === 'pending' && (
+          <CardDescription>
+            <div className="flex flex-col gap-1 mt-2">
+              <div>קטגוריה: {gemach.category}</div>
+              <div>שכונה: {gemach.neighborhood}</div>
+              <div>נוצר בתאריך: {gemach.created_at}</div>
+            </div>
+          </CardDescription>
+        </CardHeader>
+        <CardFooter className="flex justify-between">
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" className="text-green-600" onClick={() => handleApprove(gemach.id)}>
-              <Check className="h-4 w-4 ml-1" />
-              אישור
+            <Button size="sm" variant="outline" onClick={() => handleViewDetails(gemach.id)}>
+              <Eye className="h-4 w-4 ml-1" />
+              צפייה
             </Button>
-            <Button size="sm" variant="outline" className="text-red-600" onClick={() => handleReject(gemach.id)}>
-              <X className="h-4 w-4 ml-1" />
-              דחייה
+            <Button size="sm" variant="outline" onClick={() => handleEdit(gemach.id)}>
+              <Pencil className="h-4 w-4 ml-1" />
+              עריכה
+            </Button>
+            <Button size="sm" variant="outline" className="text-red-600" onClick={() => handleDelete(gemach.id)}>
+              <Trash2 className="h-4 w-4 ml-1" />
+              מחיקה
             </Button>
           </div>
-        )}
-      </CardFooter>
-    </Card>
-  );
+          
+          {isAdmin && status === 'pending' && (
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="text-green-600" onClick={() => handleApprove(gemach.id)}>
+                <Check className="h-4 w-4 ml-1" />
+                אישור
+              </Button>
+              <Button size="sm" variant="outline" className="text-red-600" onClick={() => handleReject(gemach.id)}>
+                <X className="h-4 w-4 ml-1" />
+                דחייה
+              </Button>
+            </div>
+          )}
+        </CardFooter>
+      </Card>
+    );
+  };
 
   if (!user) {
     return null; // Will redirect in useEffect
