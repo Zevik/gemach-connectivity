@@ -14,7 +14,6 @@ import GemachDetail from "@/pages/GemachDetail";
 import RegisterGemach from "@/pages/RegisterGemach";
 import RegistrationSuccess from "@/pages/RegistrationSuccess";
 import About from "@/pages/About";
-import Home from "@/pages/Home";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -29,7 +28,6 @@ const App = () => (
           <Routes>
             {/* Main routes */}
             <Route path="/" element={<Index />} />
-            <Route path="/home" element={<Navigate to="/" replace />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/dashboard" element={<Dashboard />} />
