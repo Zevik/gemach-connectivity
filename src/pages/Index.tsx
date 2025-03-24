@@ -131,12 +131,16 @@ const Index = () => {
   const addGemachsToSupabase = async () => {
     try {
       // Add new gemachs with complete data
-      const formattedGemachs = newGemachs.map(gemach => ({
-        ...gemach,
-        owner_id: null,
-        is_approved: true,
-        created_at: new Date().toISOString(),
-      }));
+      const formattedGemachs = newGemachs.map(gemach => {
+        // Create a new object without the image_url property
+        const { image_url, ...gemachWithoutImage } = gemach;
+        return {
+          ...gemachWithoutImage,
+          owner_id: null,
+          is_approved: true,
+          created_at: new Date().toISOString(),
+        };
+      });
 
       const { data, error } = await supabase
         .from('gemachs')

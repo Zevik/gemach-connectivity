@@ -22,7 +22,6 @@ const sampleGemachs = [
     phone: "02-123-4567",
     hours: "א'-ה' 9:00-19:00",
     description: "השאלת כלי עבודה לבית ולגינה. כולל מקדחות, פטישים, מברגים, כלי גינון ועוד.",
-    image_url: "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
     is_approved: true
   },
   {
@@ -33,7 +32,6 @@ const sampleGemachs = [
     phone: "02-765-4321",
     hours: "א'-ה' 10:00-18:00, ו' 9:00-12:00",
     description: "השאלת ציוד רפואי לנזקקים. כיסאות גלגלים, קביים, הליכונים, מכשירי אדים ועוד.",
-    image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2130&q=80",
     is_approved: true
   },
   {
@@ -44,7 +42,6 @@ const sampleGemachs = [
     phone: "02-987-6543",
     hours: "א', ג', ה' 16:00-20:00",
     description: "השאלת ספרי לימוד לתלמידים בכל הגילאים. ספרי קודש, ספרי לימוד, וחוברות עבודה.",
-    image_url: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
     is_approved: true
   }
 ];
