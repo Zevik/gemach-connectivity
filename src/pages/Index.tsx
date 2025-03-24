@@ -130,21 +130,9 @@ const Index = () => {
   // Function to add the gemachs to Supabase directly
   const addGemachsToSupabase = async () => {
     try {
-      // First clear any existing gemachs to avoid duplicates
-      const { error: deleteError } = await supabase
-        .from('gemachs')
-        .delete()
-        .not('id', 'is', null); // Delete all records
-      
-      if (deleteError) {
-        console.error("Error deleting existing gemachs:", deleteError);
-        // Continue even if delete fails
-      }
-      
       // Add new gemachs with complete data
       const formattedGemachs = newGemachs.map(gemach => ({
         ...gemach,
-        // Use admin ID or null for owner
         owner_id: null,
         is_approved: true,
         created_at: new Date().toISOString(),
@@ -169,41 +157,41 @@ const Index = () => {
     }
   };
 
-  // Load gemachs from Supabase - if none exist, add the new ones
+  // Immediately add gemachs to Supabase when component loads
   useEffect(() => {
-    const fetchGemachs = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('gemachs')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (data && data.length > 0) {
-          setGemachs(data);
-        } else {
-          // If no gemachs in database, add the new ones automatically
-          console.log("No gemachs found in Supabase, adding the example gemachs...");
-          const newData = await addGemachsToSupabase();
-          if (newData) {
-            setGemachs(newData);
-          } else {
-            setGemachs([]);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching gemachs:', error);
-        // Show empty state on error
-        setGemachs([]);
-      } finally {
-        setIsLoading(false);
+    addGemachsToSupabase().then(data => {
+      if (data) {
+        console.log("Added 10 gemachs on page load");
+        // Load the gemachs from Supabase to display them
+        fetchGemachs();
       }
-    };
+    });
+  }, []);
 
+  // Load gemachs from Supabase
+  const fetchGemachs = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('gemachs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      setGemachs(data || []);
+    } catch (error) {
+      console.error('Error fetching gemachs:', error);
+      setGemachs([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load gemachs when component mounts
+  useEffect(() => {
     fetchGemachs();
   }, []);
 
