@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MapPin, Clock, Phone, Info, X } from 'lucide-react';
+import { Search, MapPin, Clock, Phone, Info, X, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { neighborhoods, categories } from '@/data/constants';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/use-toast';
 
 // דוגמה של נתוני גמ"חים לבדיקה
 const dummyGemachs = [
@@ -87,8 +89,93 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [gemachs] = useState(dummyGemachs);
-  const [selectedGemach, setSelectedGemach] = useState<typeof dummyGemachs[0] | null>(null);
+  const [gemachs, setGemachs] = useState<any[]>([]);
+  const [selectedGemach, setSelectedGemach] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load gemachs from Supabase
+  useEffect(() => {
+    const fetchGemachs = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('gemachs')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data && data.length > 0) {
+          setGemachs(data);
+        } else {
+          // If no gemachs in database, fall back to dummy data
+          setGemachs(dummyGemachs);
+        }
+      } catch (error) {
+        console.error('Error fetching gemachs:', error);
+        // Fall back to dummy data on error
+        setGemachs(dummyGemachs);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGemachs();
+  }, []);
+
+  // Function to add dummy gemachs to Supabase (for development)
+  const addDummyGemachsToSupabase = async () => {
+    try {
+      // Check if we're already using the dummy data
+      if (gemachs.length === dummyGemachs.length && gemachs[0].id === dummyGemachs[0].id) {
+        // Convert the dummy gemachs to the format expected by Supabase
+        const formattedGemachs = dummyGemachs.map(gemach => ({
+          name: gemach.name,
+          category: gemach.category,
+          neighborhood: gemach.neighborhood,
+          address: gemach.address,
+          phone: gemach.phone,
+          hours: gemach.hours,
+          description: gemach.description,
+          image_url: gemach.image,
+          owner_id: user?.id || null,
+          is_approved: true,
+          created_at: new Date().toISOString(),
+        }));
+
+        const { data, error } = await supabase
+          .from('gemachs')
+          .insert(formattedGemachs)
+          .select();
+
+        if (error) {
+          throw error;
+        }
+
+        toast({
+          title: "הגמ\"חים נוספו בהצלחה",
+          description: `${formattedGemachs.length} גמ\"חים נוספו למסד הנתונים`,
+        });
+
+        // Refresh the page to show the new gemachs from Supabase
+        window.location.reload();
+      } else {
+        toast({
+          title: "הגמ\"חים כבר קיימים במערכת",
+          description: "נראה שהגמ\"חים כבר נוספו למסד הנתונים",
+        });
+      }
+    } catch (error: any) {
+      console.error('Error adding gemachs to Supabase:', error);
+      toast({
+        title: "שגיאה בהוספת הגמ\"חים",
+        description: error.message || "אירעה שגיאה בהוספת הגמ\"חים למסד הנתונים",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,15 +187,21 @@ const Index = () => {
   };
 
   const filteredGemachs = gemachs.filter(gemach => {
+    // Check if the required properties exist
+    const gemachName = gemach.name || '';
+    const gemachDescription = gemach.description || '';
+    const gemachNeighborhood = gemach.neighborhood || '';
+    const gemachCategory = gemach.category || '';
+    
     const matchesSearch = searchTerm === '' || 
-      gemach.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      gemach.description.toLowerCase().includes(searchTerm.toLowerCase());
+      gemachName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      gemachDescription.toLowerCase().includes(searchTerm.toLowerCase());
       
     const matchesNeighborhood = selectedNeighborhood === 'all' || 
-      gemach.neighborhood === selectedNeighborhood;
+      gemachNeighborhood === selectedNeighborhood;
       
     const matchesCategory = selectedCategory === 'all' || 
-      gemach.category === selectedCategory;
+      gemachCategory === selectedCategory;
       
     return matchesSearch && matchesNeighborhood && matchesCategory;
   });
@@ -179,42 +272,67 @@ const Index = () => {
         {/* Featured Gemachs */}
         <section className="py-12 md:py-16 px-4">
           <div className="container mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">
-              גמ״חים מובילים
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {filteredGemachs.map((gemach) => (
-                <Card 
-                  key={gemach.id} 
-                  className="overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer"
-                  onClick={() => setSelectedGemach(gemach)}
+            <div className="flex justify-between items-center mb-8 md:mb-12">
+              <h2 className="text-2xl md:text-3xl font-bold text-center">
+                גמ״חים מובילים
+              </h2>
+              {user && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={addDummyGemachsToSupabase}
                 >
-                  <div className="relative h-48 overflow-hidden">
-                    <img 
-                      src={gemach.image} 
-                      alt={gemach.name} 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-3 right-3 bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
-                      {gemach.category}
-                    </div>
-                  </div>
-                  <CardContent className="p-5">
-                    <h3 className="text-xl font-bold mb-3">{gemach.name}</h3>
-                    <div className="space-y-2 text-gray-600">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 flex-shrink-0" />
-                        <span className="text-sm">{gemach.neighborhood}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 flex-shrink-0" />
-                        <span className="text-sm">{gemach.hours}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                  הוסף גמ״חים לדוגמה לסופבייס
+                </Button>
+              )}
             </div>
+            
+            {isLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <Loader2 className="h-10 w-10 animate-spin text-sky-600" />
+                <span className="text-lg mr-4">טוען גמ״חים...</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                {filteredGemachs.length > 0 ? (
+                  filteredGemachs.map((gemach) => (
+                    <Card 
+                      key={gemach.id} 
+                      className="overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+                      onClick={() => setSelectedGemach(gemach)}
+                    >
+                      <div className="relative h-48 overflow-hidden">
+                        <img 
+                          src={gemach.image_url || gemach.image} 
+                          alt={gemach.name} 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-3 right-3 bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
+                          {gemach.category}
+                        </div>
+                      </div>
+                      <CardContent className="p-5">
+                        <h3 className="text-xl font-bold mb-3">{gemach.name}</h3>
+                        <div className="space-y-2 text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 flex-shrink-0" />
+                            <span className="text-sm">{gemach.neighborhood}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 flex-shrink-0" />
+                            <span className="text-sm">{gemach.hours}</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="col-span-full py-10 text-center text-gray-500">
+                    לא נמצאו גמ״חים התואמים את החיפוש
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
       </main>
@@ -228,7 +346,7 @@ const Index = () => {
             <>
               <div className="relative h-52 overflow-hidden">
                 <img 
-                  src={selectedGemach.image} 
+                  src={selectedGemach.image_url || selectedGemach.image} 
                   alt={selectedGemach.name} 
                   className="w-full h-full object-cover"
                 />
