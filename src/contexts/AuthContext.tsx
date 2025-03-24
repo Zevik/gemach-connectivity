@@ -17,6 +17,7 @@ interface AuthContextType {
   isAdmin: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
 }
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   loading: true,
   login: async () => {},
+  loginWithGoogle: async () => {},
   register: async () => {},
   logout: () => {},
 });
@@ -74,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData: User = {
         id: session.user.id,
         email: session.user.email || '',
-        name: session.user?.user_metadata?.name || '',
+        name: session.user?.user_metadata?.name || session.user?.user_metadata?.full_name || '',
         isAdmin: isAdmin,
       };
 
@@ -107,6 +109,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
     } catch (error) {
       console.error('Login error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      
+      if (error) throw error;
+      
+      // No need to navigate - OAuth will handle redirection
+      return data;
+    } catch (error) {
+      console.error('Google login error:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -155,7 +180,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user, 
     isAdmin,
     loading, 
-    login, 
+    login,
+    loginWithGoogle,
     register, 
     logout 
   }}>{children}</AuthContext.Provider>;
