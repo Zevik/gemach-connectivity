@@ -10,6 +10,44 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Pencil, Trash2, Eye, Check, X, Bell } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
+
+// Sample gemachs
+const sampleGemachs = [
+  {
+    name: "גמ\"ח כלי עבודה",
+    category: "כלי בית",
+    neighborhood: "רחביה",
+    address: "רחוב קרן היסוד 19, ירושלים",
+    phone: "02-123-4567",
+    hours: "א'-ה' 9:00-19:00",
+    description: "השאלת כלי עבודה לבית ולגינה. כולל מקדחות, פטישים, מברגים, כלי גינון ועוד.",
+    image_url: "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+    is_approved: true
+  },
+  {
+    name: "גמ\"ח ציוד רפואי",
+    category: "סיוע רפואי",
+    neighborhood: "בית וגן",
+    address: "רחוב הפסגה 42, ירושלים",
+    phone: "02-765-4321",
+    hours: "א'-ה' 10:00-18:00, ו' 9:00-12:00",
+    description: "השאלת ציוד רפואי לנזקקים. כיסאות גלגלים, קביים, הליכונים, מכשירי אדים ועוד.",
+    image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2130&q=80",
+    is_approved: true
+  },
+  {
+    name: "גמ\"ח ספרי לימוד",
+    category: "ספרים",
+    neighborhood: "הר נוף",
+    address: "רחוב קצנלבוגן 32, ירושלים",
+    phone: "02-987-6543",
+    hours: "א', ג', ה' 16:00-20:00",
+    description: "השאלת ספרי לימוד לתלמידים בכל הגילאים. ספרי קודש, ספרי לימוד, וחוברות עבודה.",
+    image_url: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
+    is_approved: true
+  }
+];
 
 // Types
 interface GemachItem {
@@ -41,6 +79,51 @@ const Dashboard = () => {
       navigate('/auth');
     }
   }, [user, navigate]);
+
+  // Add sample gemachs if admin and no gemachs exist
+  useEffect(() => {
+    const addSampleGemachs = async () => {
+      if (!isAdmin) return;
+      
+      try {
+        // Check if there are any gemachs
+        const { data, error } = await supabase
+          .from('gemachs')
+          .select('id')
+          .limit(1);
+          
+        if (error) throw error;
+        
+        // If no gemachs exist, add the sample ones
+        if (!data || data.length === 0) {
+          console.log("No gemachs found, adding sample gemachs...");
+          
+          const formattedGemachs = sampleGemachs.map(gemach => ({
+            ...gemach,
+            owner_id: user?.id || null,
+            created_at: new Date().toISOString(),
+          }));
+          
+          const { data: insertedData, error: insertError } = await supabase
+            .from('gemachs')
+            .insert(formattedGemachs)
+            .select();
+            
+          if (insertError) throw insertError;
+          
+          console.log("Added sample gemachs:", insertedData);
+          toast({
+            title: "נוספו גמ\"חים לדוגמה",
+            description: "מספר גמ\"חים לדוגמה נוספו למערכת",
+          });
+        }
+      } catch (error) {
+        console.error("Error adding sample gemachs:", error);
+      }
+    };
+    
+    addSampleGemachs();
+  }, [isAdmin, user]);
 
   // Load gemachs data
   useEffect(() => {
