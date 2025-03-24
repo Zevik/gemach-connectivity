@@ -3,12 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MapPin, Clock } from 'lucide-react';
+import { Search, MapPin, Clock, Phone, Info, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { neighborhoods, categories } from '@/data/constants';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 
 // דוגמה של נתוני גמ"חים לבדיקה
 const dummyGemachs = [
@@ -87,6 +88,7 @@ const Index = () => {
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [gemachs] = useState(dummyGemachs);
+  const [selectedGemach, setSelectedGemach] = useState<typeof dummyGemachs[0] | null>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,7 +184,11 @@ const Index = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {filteredGemachs.map((gemach) => (
-                <Card key={gemach.id} className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
+                <Card 
+                  key={gemach.id} 
+                  className="overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+                  onClick={() => setSelectedGemach(gemach)}
+                >
                   <div className="relative h-48 overflow-hidden">
                     <img 
                       src={gemach.image} 
@@ -214,6 +220,71 @@ const Index = () => {
       </main>
       
       <Footer />
+
+      {/* Gemach Details Dialog */}
+      <Dialog open={!!selectedGemach} onOpenChange={(open) => !open && setSelectedGemach(null)}>
+        <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden">
+          {selectedGemach && (
+            <>
+              <div className="relative h-52 overflow-hidden">
+                <img 
+                  src={selectedGemach.image} 
+                  alt={selectedGemach.name} 
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute top-3 right-3">
+                  <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
+                    {selectedGemach.category}
+                  </span>
+                </div>
+                <DialogClose className="absolute top-2 left-2 rounded-full h-8 w-8 flex items-center justify-center bg-gray-800 bg-opacity-60 text-white hover:bg-opacity-80">
+                  <X className="h-5 w-5" />
+                </DialogClose>
+              </div>
+              
+              <div className="p-6">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-bold mb-2">{selectedGemach.name}</DialogTitle>
+                  <DialogDescription className="text-gray-600 mb-4">
+                    {selectedGemach.description}
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-5 w-5 mt-0.5 text-gray-500 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">כתובת</p>
+                      <p className="text-gray-700">{selectedGemach.address}</p>
+                      <p className="text-gray-700">{selectedGemach.neighborhood}, ירושלים</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <Phone className="h-5 w-5 mt-0.5 text-gray-500 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">טלפון</p>
+                      <p className="text-gray-700">{selectedGemach.phone}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <Clock className="h-5 w-5 mt-0.5 text-gray-500 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium">שעות פעילות</p>
+                      <p className="text-gray-700">{selectedGemach.hours}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex justify-end">
+                  <Button onClick={() => setSelectedGemach(null)}>סגור</Button>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
