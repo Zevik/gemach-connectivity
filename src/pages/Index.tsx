@@ -294,30 +294,6 @@ const Index = () => {
               <h2 className="text-2xl md:text-3xl font-bold text-center">
                 גמ״חים מובילים
               </h2>
-              <Button 
-                variant="outline"
-                onClick={async () => {
-                  try {
-                    const result = await addGemachsToSupabase();
-                    if (result) {
-                      setGemachs(result);
-                      toast({
-                        title: "הצלחה!",
-                        description: `${result.length} גמ"חים נוספו בהצלחה למסד הנתונים`,
-                      });
-                    }
-                  } catch (error) {
-                    console.error("Error adding gemachs:", error);
-                    toast({
-                      title: "שגיאה",
-                      description: "אירעה שגיאה בהוספת הגמ\"חים",
-                      variant: "destructive"
-                    });
-                  }
-                }}
-              >
-                הוסף 10 גמ"חים לדוגמה
-              </Button>
             </div>
             
             {isLoading ? (
