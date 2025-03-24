@@ -14,39 +14,69 @@ import { neighborhoods, categories } from '@/data/constants';
 const dummyGemachs = [
   {
     id: 1,
-    name: "גמ״ח ציוד רפואי",
-    category: "סיוע רפואי",
-    neighborhood: "רמות אלון",
-    address: "רחוב שירת הים 12, רמות אלון",
-    phone: "02-456-7890",
-    description: "גמ״ח לציוד רפואי - כסאות גלגלים, קביים, מדי סוכר, מדי לחץ דם ועוד.",
-    image: "/medical-equipment.jpg",
-    hours: "ימים א'-ה' 9:00-13:00, 16:00-19:00",
-    isFeatured: true
+    name: "גמ\"ח כלי עבודה",
+    category: "כלי בית",
+    neighborhood: "רחביה",
+    address: "רחוב קרן היסוד 19, ירושלים",
+    phone: "02-123-4567",
+    hours: "א'-ה' 9:00-19:00",
+    description: "השאלת כלי עבודה לבית ולגינה",
+    image: "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
   },
   {
     id: 2,
-    name: "גמ״ח בגדי ילדים",
-    category: "בגדים",
-    neighborhood: "קרית משה | גבעת שאול",
-    address: "רחוב הרב צבי יהודה 15, גבעת שאול",
-    phone: "02-987-6543",
-    description: "גמ״ח בגדי ילדים לכל הגילאים. כל המידות, בגדי שבת וחול.",
-    image: "/kids-clothes.jpg",
-    hours: "יום א' 10:00-16:00",
-    isFeatured: true
+    name: "גמ\"ח ציוד רפואי",
+    category: "סיוע רפואי",
+    neighborhood: "בית וגן",
+    address: "רחוב הפסגה 42, ירושלים",
+    phone: "02-765-4321",
+    hours: "א'-ה' 10:00-18:00, ו' 9:00-12:00",
+    description: "השאלת ציוד רפואי לנזקקים",
+    image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2130&q=80"
   },
   {
     id: 3,
-    name: "גמ״ח ספרי תורה",
+    name: "גמ\"ח ספרי לימוד",
     category: "ספרים",
-    neighborhood: "בית וגן",
-    address: "רחוב עוזיאל 30, בית וגן",
-    phone: "02-123-4567",
-    description: "גמ״ח לספרי קודש, ספרי לימוד וחוברות לימוד.",
-    image: "/torah-books.jpg",
-    hours: "ימים א'-ה' 9:00-13:00, 16:00-19:00",
-    isFeatured: true
+    neighborhood: "הר נוף",
+    address: "רחוב קצנלבוגן 32, ירושלים",
+    phone: "02-987-6543",
+    hours: "א', ג', ה' 16:00-20:00",
+    description: "השאלת ספרי לימוד לתלמידים",
+    image: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+  },
+  {
+    id: 4,
+    name: "גמ\"ח שמלות כלה",
+    category: "עזרה לחתן וכלה",
+    neighborhood: "גאולה",
+    address: "רחוב מלכי ישראל 8, ירושלים",
+    phone: "02-345-6789",
+    hours: "א'-ה' 10:00-20:00",
+    description: "השאלת שמלות כלה וערב",
+    image: "https://images.unsplash.com/photo-1525257831700-383215253d18?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80"
+  },
+  {
+    id: 5,
+    name: "גמ\"ח ריהוט",
+    category: "ריהוט",
+    neighborhood: "קרית משה | גבעת שאול",
+    address: "רחוב הרב הרצוג 25, ירושלים",
+    phone: "02-234-5678",
+    hours: "א', ג', ה' 9:00-13:00",
+    description: "השאלת וחלוקת ריהוט לנזקקים",
+    image: "https://images.unsplash.com/photo-1538688525198-9b88f6f53126?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2074&q=80"
+  },
+  {
+    id: 6,
+    name: "גמ\"ח מוצרי תינוקות",
+    category: "מוצרי תינוקות",
+    neighborhood: "רמות אלון",
+    address: "שדרות גולדה מאיר 12, ירושלים",
+    phone: "02-876-5432",
+    hours: "ב', ד' 16:00-21:00",
+    description: "השאלת ציוד ומוצרים לתינוקות ופעוטות",
+    image: "https://images.unsplash.com/photo-1519689680058-324335c77eba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
   }
 ];
 
@@ -178,46 +208,6 @@ const Index = () => {
                   </CardContent>
                 </Card>
               ))}
-            </div>
-          </div>
-        </section>
-
-        {/* How it Works */}
-        <section className="bg-white py-12 md:py-16 px-4">
-          <div className="container mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">
-              איך זה עובד
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <span className="text-2xl font-bold text-blue-600">1</span>
-                </div>
-                <h3 className="text-xl font-bold mb-3">חיפוש</h3>
-                <p className="text-gray-600">
-                  מצא את הגמ״ח המתאים באמצעות חיפוש מהיר או סינון לפי קטגוריות
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <span className="text-2xl font-bold text-blue-600">2</span>
-                </div>
-                <h3 className="text-xl font-bold mb-3">התחברות</h3>
-                <p className="text-gray-600">
-                  צור קשר עם הגמ״ח דרך פרטי ההתקשרות המופיעים בכרטיס המידע
-                </p>
-              </div>
-              
-              <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <span className="text-2xl font-bold text-blue-600">3</span>
-                </div>
-                <h3 className="text-xl font-bold mb-3">הפקת תועלת</h3>
-                <p className="text-gray-600">
-                  קבל את השירות או המוצר שחיפשת בקלות ובמהירות
-                </p>
-              </div>
             </div>
           </div>
         </section>
