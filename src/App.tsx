@@ -11,6 +11,7 @@ import Auth from "@/pages/Auth";
 import AuthCallback from "@/pages/AuthCallback";
 import Dashboard from "@/pages/Dashboard";
 import GemachsList from "@/pages/GemachsList";
+import RegisterGemach from "@/pages/RegisterGemach";
 import { FaGoogle } from "react-icons/fa";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/gemachs" element={<GemachsList />} />
+            <Route path="/register-gemach" element={<RegisterGemach />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
