@@ -13,6 +13,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import GemachDetail from "@/pages/GemachDetail";
 import RegisterGemach from "@/pages/RegisterGemach";
 import RegistrationSuccess from "@/pages/RegistrationSuccess";
+import About from "@/pages/About";
 import "./App.css";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/gemach/:id" element={<GemachDetail />} />
             <Route path="/register-gemach" element={<RegisterGemach />} />
             <Route path="/registration-success" element={<RegistrationSuccess />} />
+            <Route path="/about" element={<About />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
