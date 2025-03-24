@@ -137,13 +137,15 @@ const Index = () => {
         .not('id', 'is', null); // Delete all records
       
       if (deleteError) {
-        throw deleteError;
+        console.error("Error deleting existing gemachs:", deleteError);
+        // Continue even if delete fails
       }
       
       // Add new gemachs with complete data
       const formattedGemachs = newGemachs.map(gemach => ({
         ...gemach,
-        owner_id: user?.id || null,
+        // Use admin ID or null for owner
+        owner_id: null,
         is_approved: true,
         created_at: new Date().toISOString(),
       }));
@@ -154,6 +156,7 @@ const Index = () => {
         .select();
 
       if (error) {
+        console.error("Insert error details:", error);
         throw error;
       }
 
@@ -161,6 +164,7 @@ const Index = () => {
       return data;
     } catch (error: any) {
       console.error('Error adding gemachs to Supabase:', error);
+      alert("שגיאה בהוספת גמחים: " + (error.message || "שגיאה לא ידועה"));
       return null;
     }
   };
@@ -302,6 +306,30 @@ const Index = () => {
               <h2 className="text-2xl md:text-3xl font-bold text-center">
                 גמ״חים מובילים
               </h2>
+              <Button 
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const result = await addGemachsToSupabase();
+                    if (result) {
+                      setGemachs(result);
+                      toast({
+                        title: "הצלחה!",
+                        description: `${result.length} גמ"חים נוספו בהצלחה למסד הנתונים`,
+                      });
+                    }
+                  } catch (error) {
+                    console.error("Error adding gemachs:", error);
+                    toast({
+                      title: "שגיאה",
+                      description: "אירעה שגיאה בהוספת הגמ\"חים",
+                      variant: "destructive"
+                    });
+                  }
+                }}
+              >
+                הוסף 10 גמ"חים לדוגמה
+              </Button>
             </div>
             
             {isLoading ? (
