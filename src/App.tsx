@@ -15,6 +15,7 @@ import GemachsList from "@/pages/GemachsList";
 import GemachDetail from "@/pages/GemachDetail";
 import RegisterGemach from "@/pages/RegisterGemach";
 import RegistrationSuccess from "@/pages/RegistrationSuccess";
+import "./App.css";
 
 const queryClient = new QueryClient();
 
