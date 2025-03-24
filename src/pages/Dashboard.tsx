@@ -18,8 +18,12 @@ interface GemachItem {
   category: string;
   neighborhood: string;
   created_at: string;
-  status: 'pending' | 'approved' | 'rejected';
+  phone: string;
+  description: string;
+  address: string;
+  is_approved: boolean | null;
   owner_id: string;
+  // Add other fields that might be present in your Supabase table
 }
 
 const Dashboard = () => {
@@ -57,10 +61,11 @@ const Dashboard = () => {
         
         // Load pending gemachs (admin only)
         if (isAdmin) {
+          // Use "is" to handle nulls properly
           const { data: pendingGemachsData, error: pendingGemachsError } = await supabase
             .from('gemachs')
             .select('*')
-            .eq('is_approved', false);
+            .is('is_approved', null);
             
           if (pendingGemachsError) throw pendingGemachsError;
           setPendingGemachs(pendingGemachsData || []);
@@ -126,13 +131,14 @@ const Dashboard = () => {
       // Update local state after successful approval
       setPendingGemachs(pendingGemachs.filter(gemach => gemach.id !== id));
       
+      // Update the full list with the updated gemach
       setAllGemachs(allGemachs.map(gemach => 
-        gemach.id === id ? { ...gemach, status: 'approved' as const } : gemach
+        gemach.id === id ? { ...gemach, is_approved: true } : gemach
       ));
 
       // Also update in userGemachs if it belongs to the current user
       setUserGemachs(userGemachs.map(gemach => 
-        gemach.id === id ? { ...gemach, status: 'approved' as const } : gemach
+        gemach.id === id ? { ...gemach, is_approved: true } : gemach
       ));
     } catch (error) {
       console.error('Error approving gemach:', error);
@@ -152,13 +158,14 @@ const Dashboard = () => {
       // Update local state after successful rejection
       setPendingGemachs(pendingGemachs.filter(gemach => gemach.id !== id));
       
+      // Update the full list with the updated gemach
       setAllGemachs(allGemachs.map(gemach => 
-        gemach.id === id ? { ...gemach, status: 'rejected' as const } : gemach
+        gemach.id === id ? { ...gemach, is_approved: false } : gemach
       ));
 
       // Also update in userGemachs if it belongs to the current user
       setUserGemachs(userGemachs.map(gemach => 
-        gemach.id === id ? { ...gemach, status: 'rejected' as const } : gemach
+        gemach.id === id ? { ...gemach, is_approved: false } : gemach
       ));
     } catch (error) {
       console.error('Error rejecting gemach:', error);
@@ -193,8 +200,10 @@ const Dashboard = () => {
 
   // Convert Supabase is_approved field to status
   const getStatusFromGemach = (gemach: any): 'pending' | 'approved' | 'rejected' => {
+    // Supabase could return null, true, or false for is_approved
     if (gemach.is_approved === true) return 'approved';
     if (gemach.is_approved === false) return 'rejected';
+    // Null or undefined means pending
     return 'pending';
   };
 
