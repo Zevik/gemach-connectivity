@@ -29,9 +29,16 @@ const formSchema = z.object({
   category: z.string().min(1, { message: "יש לבחור קטגוריה" }),
   neighborhood: z.string().min(1, { message: "יש לבחור שכונה" }),
   address: z.string().min(5, { message: "יש להזין כתובת מלאה" }),
+  location_instructions: z.string().optional(),
   phone: z.string().min(9, { message: "יש להזין מספר טלפון תקין" }),
+  alternative_phone: z.string().optional(),
+  email: z.string().email({ message: "יש להזין כתובת אימייל תקינה" }).optional().or(z.literal('')),
   description: z.string().min(10, { message: "יש להזין תיאור של לפחות 10 תווים" }),
   hours: z.string().min(2, { message: "יש להזין שעות פעילות" }),
+  has_fee: z.boolean().default(false),
+  fee_details: z.string().optional(),
+  website_url: z.string().url({ message: "יש להזין כתובת אתר תקינה" }).optional().or(z.literal('')),
+  facebook_url: z.string().url({ message: "יש להזין כתובת פייסבוק תקינה" }).optional().or(z.literal('')),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -42,16 +49,25 @@ const RegisterGemach = () => {
   const { user, isLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
+  const [hasFee, setHasFee] = useState(false);
+  
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       category: '',
       neighborhood: '',
       address: '',
+      location_instructions: '',
       phone: '',
+      alternative_phone: '',
+      email: '',
       description: '',
       hours: '',
+      has_fee: false,
+      fee_details: '',
+      website_url: '',
+      facebook_url: '',
     }
   });
 
@@ -115,6 +131,11 @@ const RegisterGemach = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     setSelectedFiles(files);
+  };
+
+  const handleFeeChange = (checked: boolean) => {
+    setValue('has_fee', checked);
+    setHasFee(checked);
   };
 
   return (
@@ -196,16 +217,56 @@ const RegisterGemach = () => {
               </div>
 
               <div>
+                <label htmlFor="location_instructions" className="block text-sm font-medium text-gray-700 mb-1">
+                  הוראות הגעה
+                </label>
+                <Textarea
+                  id="location_instructions"
+                  placeholder="פרטים נוספים על איך להגיע למקום, סימנים מזהים, קומה, כניסה וכו׳"
+                  {...register('location_instructions')}
+                  rows={3}
+                />
+              </div>
+
+              <div>
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                  טלפון
+                  טלפון ראשי
                 </label>
                 <Input
                   id="phone"
                   type="tel"
+                  placeholder="02-123-4567"
                   {...register('phone')}
                 />
                 {errors.phone && (
                   <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="alternative_phone" className="block text-sm font-medium text-gray-700 mb-1">
+                  טלפון חלופי (אופציונלי)
+                </label>
+                <Input
+                  id="alternative_phone"
+                  type="tel"
+                  placeholder="050-123-4567"
+                  {...register('alternative_phone')}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  אימייל (אופציונלי)
+                </label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  {...register('email')}
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
                 )}
               </div>
 
@@ -215,6 +276,7 @@ const RegisterGemach = () => {
                 </label>
                 <Input
                   id="hours"
+                  placeholder="לדוגמה: א'-ה' 9:00-13:00, 16:00-19:00"
                   {...register('hours')}
                 />
                 {errors.hours && (
@@ -228,11 +290,74 @@ const RegisterGemach = () => {
                 </label>
                 <Textarea
                   id="description"
+                  placeholder="פרטו על מטרת הגמ״ח, מה ניתן להשאיל, תנאים מיוחדים וכו׳"
                   {...register('description')}
                   rows={4}
                 />
                 {errors.description && (
                   <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
+                )}
+              </div>
+
+              {/* Payment Information */}
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2 space-x-reverse">
+                  <Checkbox 
+                    id="has_fee" 
+                    checked={hasFee} 
+                    onCheckedChange={handleFeeChange}
+                  />
+                  <label 
+                    htmlFor="has_fee" 
+                    className="text-sm font-medium text-gray-700 cursor-pointer"
+                  >
+                    הגמ״ח דורש תשלום כלשהו
+                  </label>
+                </div>
+
+                {hasFee && (
+                  <div>
+                    <label htmlFor="fee_details" className="block text-sm font-medium text-gray-700 mb-1">
+                      פרטי התשלום
+                    </label>
+                    <Textarea
+                      id="fee_details"
+                      placeholder="פרטו את עלות השימוש בגמ״ח ולאן מיועדים הרווחים"
+                      {...register('fee_details')}
+                      rows={3}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Website and Social Media */}
+              <div>
+                <label htmlFor="website_url" className="block text-sm font-medium text-gray-700 mb-1">
+                  אתר אינטרנט (אופציונלי)
+                </label>
+                <Input
+                  id="website_url"
+                  type="url"
+                  placeholder="https://www.example.com"
+                  {...register('website_url')}
+                />
+                {errors.website_url && (
+                  <p className="text-red-500 text-sm mt-1">{errors.website_url.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="facebook_url" className="block text-sm font-medium text-gray-700 mb-1">
+                  עמוד פייסבוק (אופציונלי)
+                </label>
+                <Input
+                  id="facebook_url"
+                  type="url"
+                  placeholder="https://www.facebook.com/yourgmach"
+                  {...register('facebook_url')}
+                />
+                {errors.facebook_url && (
+                  <p className="text-red-500 text-sm mt-1">{errors.facebook_url.message}</p>
                 )}
               </div>
 
