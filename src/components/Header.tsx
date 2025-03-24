@@ -29,6 +29,7 @@ const Header = () => {
             <Link to="/" className="text-2xl font-bold">גמ״ח קונקטיביטי</Link>
             <nav className="hidden md:flex gap-x-6">
               <Link to="/" className="transition-colors hover:text-sky-100">דף הבית</Link>
+              <Link to="/register-gemach" className="transition-colors hover:text-sky-100">הוספת גמ"ח</Link>
               <Link to="/about" className="transition-colors hover:text-sky-100">אודות</Link>
               {user && (
                 <Link to="/dashboard" className="transition-colors hover:text-sky-100">אזור אישי</Link>
@@ -39,12 +40,12 @@ const Header = () => {
           <div className="flex items-center gap-2">
             {user ? (
               <>
-                <span className="hidden md:inline-block ml-2">שלום, {user.email}</span>
+                <span className="hidden md:inline-block ml-2">שלום, {user?.email}</span>
                 <Button onClick={logout} variant="outline" className="text-white border-white hover:bg-sky-700">התנתק</Button>
               </>
             ) : (
               <Link to="/auth">
-                <Button variant="outline" className="text-white border-white hover:bg-sky-700">התחבר / הרשם</Button>
+                <Button variant="outline" className="text-white border-white hover:bg-sky-700 hover:text-white">התחבר / הרשם</Button>
               </Link>
             )}
           </div>
