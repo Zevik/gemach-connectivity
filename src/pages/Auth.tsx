@@ -75,7 +75,7 @@ const Auth = () => {
       setIsLoading(true);
       setError('');
       await login(values.email, values.password);
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       setError('התחברות נכשלה. אנא בדוק את הפרטים שלך ונסה שוב.');
       console.error(err);
@@ -90,7 +90,7 @@ const Auth = () => {
       setIsLoading(true);
       setError('');
       await registerUser(values.email, values.password, values.fullName);
-      navigate('/dashboard');
+      navigate('/');
     } catch (err) {
       setError('הרשמה נכשלה. ייתכן שהאימייל כבר בשימוש או שיש שגיאה אחרת.');
       console.error(err);

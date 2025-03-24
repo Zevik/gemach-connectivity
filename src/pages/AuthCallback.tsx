@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,9 +14,9 @@ const AuthCallback = () => {
         
         if (error) throw error;
         
-        // אם האימות הצליח, ננווט לדף הבית או לוח המחוונים
+        // אם האימות הצליח, ננווט לדף הבית
         if (data.session) {
-          navigate('/dashboard');
+          navigate('/');
         } else {
           navigate('/auth');
         }

@@ -96,19 +96,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      
-      // Sign in with Supabase
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      
+
       if (error) throw error;
+
+      const user = data.user;
       
-    } catch (error) {
-      console.error('Login error:', error);
+      // Check if the user is an admin (using the specific admin email)
+      const isAdmin = user?.email === 'zaviner@gmail.com';
+      
+      // Save user info to localStorage
+      localStorage.setItem('user', JSON.stringify({
+        id: user?.id,
+        email: user?.email,
+        isAdmin,
+      }));
+      
+      setUser({
+        id: user?.id || '',
+        email: user?.email || '',
+        isAdmin,
+      });
+      
+      return user;
+    } catch (error: any) {
+      console.error('Error logging in:', error.message);
       throw error;
     } finally {
       setLoading(false);
@@ -117,24 +134,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithGoogle = async () => {
     try {
-      setLoading(true);
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-        },
+        }
       });
-      
+
       if (error) throw error;
-      
-      // No need to navigate - OAuth will handle redirection
-      return data;
-    } catch (error) {
-      console.error('Google login error:', error);
+    } catch (error: any) {
+      console.error('Error logging in with Google:', error.message);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
