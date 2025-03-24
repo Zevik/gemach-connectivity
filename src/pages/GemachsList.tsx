@@ -90,9 +90,9 @@ const GemachsList = () => {
     <div className="container mx-auto px-4 py-8" dir="rtl">
       {/* Header section */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4 text-primary">מצא את הגמ&quot;חים בירושלים</h1>
+        <h1 className="text-4xl font-bold mb-4 text-primary">מצא את הגמ״חים בירושלים</h1>
         <p className="text-lg text-gray-600 mb-8">
-          חיבור חברי הקהילה עם שירותים, השאלות והתרומות חיים דרך רשת הגמ&quot;חים של ירושלים
+          חיבור חברי הקהילה עם שירותים, השאלות והתרומות חיים דרך רשת הגמ״חים של ירושלים
         </p>
       </div>
 
@@ -101,7 +101,7 @@ const GemachsList = () => {
         <div className="flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[250px] relative">
             <Input
-              placeholder="חיפוש גמ\"ח..."
+              placeholder='חיפוש גמ"ח...'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -149,16 +149,16 @@ const GemachsList = () => {
 
       <div className="flex gap-4 justify-center mb-12">
         <Button variant="outline" className="px-6">
-          רישום הגמ&quot;ח שלך
+          רישום הגמ״ח שלך
         </Button>
         <Button variant="default" className="px-6">
-          צפייה בכל הגמ&quot;חים
+          צפייה בכל הגמ״חים
         </Button>
       </div>
 
       {/* Featured Gemachs */}
       <div className="mb-16">
-        <h2 className="text-2xl font-bold mb-8 text-center text-primary">גמ&quot;חים מובחרים</h2>
+        <h2 className="text-2xl font-bold mb-8 text-center text-primary">גמ״חים מובחרים</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {featuredGemachs.map((gemach) => (
             <Card key={gemach.id} className="overflow-hidden">
@@ -203,7 +203,7 @@ const GemachsList = () => {
             </div>
             <h3 className="text-xl font-bold mb-2">חיפוש</h3>
             <p className="text-gray-600">
-              מצא את הגמ&quot;חים שאתה צריך באמצעות מנוע החיפוש הקהילתי שלנו
+              מצא את הגמ״חים שאתה צריך באמצעות מנוע החיפוש הקהילתי שלנו
             </p>
           </div>
           <div className="text-center">
@@ -212,7 +212,7 @@ const GemachsList = () => {
             </div>
             <h3 className="text-xl font-bold mb-2">התחברות</h3>
             <p className="text-gray-600">
-              צור קשר עם מנהלי הגמ&quot;ח ישירות באמצעות פרטי הקשר המופיעים
+              צור קשר עם מנהלי הגמ״ח ישירות באמצעות פרטי הקשר המופיעים
             </p>
           </div>
           <div className="text-center">
@@ -221,7 +221,7 @@ const GemachsList = () => {
             </div>
             <h3 className="text-xl font-bold mb-2">הפצת המידע</h3>
             <p className="text-gray-600">
-              קבל את המידע והפנה חברים, או שתף אותנו בגמ&quot;חים אחרים שאתה מכיר
+              קבל את המידע והפנה חברים, או שתף אותנו בגמ״חים אחרים שאתה מכיר
             </p>
           </div>
         </div>
@@ -229,14 +229,14 @@ const GemachsList = () => {
 
       {/* Register your Gemach */}
       <div className="bg-white p-8 rounded-lg shadow-md mb-16">
-        <h2 className="text-2xl font-bold mb-4 text-center text-primary">מנהל/ת גמ&quot;ח?</h2>
+        <h2 className="text-2xl font-bold mb-4 text-center text-primary">מנהל/ת גמ״ח?</h2>
         <p className="text-center text-gray-600 mb-6">
-          רשמו את הגמ&quot;ח שלך בפלטפורמה שלנו כדי להגיע לקהל אנשים הזקוקים לעזרה ולהגדיל את ההשפעה הקהילתית שלך
+          רשמו את הגמ״ח שלך בפלטפורמה שלנו כדי להגיע לקהל אנשים הזקוקים לעזרה ולהגדיל את ההשפעה הקהילתית שלך
         </p>
         <div className="flex justify-center">
           <Link to="/register-gemach">
             <Button variant="default" size="lg" className="px-8">
-              רישום הגמ&quot;ח שלך
+              רישום הגמ״ח שלך
             </Button>
           </Link>
         </div>
@@ -248,7 +248,7 @@ const GemachsList = () => {
           <h2 className="text-2xl font-bold mb-4">תוצאות חיפוש</h2>
           {filteredGemachs.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-lg text-gray-500">לא נמצאו גמ&quot;חים התואמים את החיפוש שלך.</p>
+              <p className="text-lg text-gray-500">לא נמצאו גמ״חים התואמים את החיפוש שלך.</p>
             </div>
           ) : (
             filteredGemachs.map((gemach) => (
@@ -289,7 +289,7 @@ const GemachsList = () => {
       <div className="border-t border-gray-200 pt-8 mt-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-lg font-bold mb-4">מרכז הגמ&quot;חים</h3>
+            <h3 className="text-lg font-bold mb-4">מרכז הגמ״חים</h3>
             <p className="text-gray-600 mb-2">
               המקום להקלת חיפוש של שירותים והשאלות של צדקה
             </p>
@@ -298,8 +298,8 @@ const GemachsList = () => {
             <h3 className="text-lg font-bold mb-4">קישורים מהירים</h3>
             <ul className="space-y-2">
               <li><a href="#" className="text-blue-600 hover:underline">דף הבית</a></li>
-              <li><a href="#" className="text-blue-600 hover:underline">חיפוש גמ&quot;ח</a></li>
-              <li><a href="#" className="text-blue-600 hover:underline">רישום גמ&quot;ח</a></li>
+              <li><a href="#" className="text-blue-600 hover:underline">חיפוש גמ״ח</a></li>
+              <li><a href="#" className="text-blue-600 hover:underline">רישום גמ״ח</a></li>
             </ul>
           </div>
           <div>
@@ -309,7 +309,7 @@ const GemachsList = () => {
           </div>
         </div>
         <div className="text-center text-gray-500 text-sm mt-8">
-          © 2023 מרכז הגמ&quot;חים. כל הזכויות שמורות.
+          © 2023 מרכז הגמ״חים. כל הזכויות שמורות.
         </div>
       </div>
     </div>

@@ -93,7 +93,7 @@ const RegisterGemach = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl" dir="rtl">
-      <h1 className="text-3xl font-bold mb-8 text-center text-primary">הרשמת גמ&quot;ח חדש</h1>
+      <h1 className="text-3xl font-bold mb-8 text-center text-primary">הרשמת גמ״ח חדש</h1>
       <p className="text-center text-gray-600 mb-8">
         השתמשו בטופס זה כדי להתחבר עם קהילת עם שירותים ומוצרים להשאלה והפצת האפשרויות שלך
       </p>
@@ -107,9 +107,9 @@ const RegisterGemach = () => {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-lg">שם הגמ&quot;ח *</FormLabel>
+                  <FormLabel className="text-lg">שם הגמ״ח *</FormLabel>
                   <FormControl>
-                    <Input placeholder="הכניסו את שם הגמ\"ח" {...field} />
+                    <Input placeholder='הכניסו את שם הגמ"ח' {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -148,10 +148,10 @@ const RegisterGemach = () => {
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-lg">תיאור מפורט של הגמ&quot;ח *</FormLabel>
+                  <FormLabel className="text-lg">תיאור מפורט של הגמ״ח *</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="אנא פרטו: תיאור של הגמ\"ח, לאיזה צורך, מה ניתן להשאיל, האם יש תנאים מיוחדים" 
+                      placeholder='אנא פרטו: תיאור של הגמ"ח, לאיזה צורך, מה ניתן להשאיל, האם יש תנאים מיוחדים' 
                       className="min-h-[120px]"
                       {...field} 
                     />
@@ -176,7 +176,7 @@ const RegisterGemach = () => {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none mr-2">
-                      <FormLabel>הגמ&quot;ח הוא תשלום מסויים</FormLabel>
+                      <FormLabel>הגמ״ח הוא תשלום מסויים</FormLabel>
                     </div>
                   </FormItem>
                 )}
@@ -269,7 +269,7 @@ const RegisterGemach = () => {
                 name="phoneAlternative"
                 render={({ field }) => (
                   <FormItem className="mb-4">
-                    <FormLabel>טלפון חלופי של הגמ&quot;ח (אם יש)</FormLabel>
+                    <FormLabel>טלפון חלופי של הגמ״ח (אם יש)</FormLabel>
                     <FormControl>
                       <Input type="tel" placeholder="02-987-6543" {...field} />
                     </FormControl>
@@ -284,7 +284,7 @@ const RegisterGemach = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>דוא&quot;ל</FormLabel>
+                    <FormLabel>דוא״ל</FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="your@email.com" {...field} />
                     </FormControl>
