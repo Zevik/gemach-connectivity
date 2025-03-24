@@ -109,7 +109,7 @@ const RegisterGemach = () => {
                 <FormItem>
                   <FormLabel className="text-lg">שם הגמ&quot;ח *</FormLabel>
                   <FormControl>
-                    <Input placeholder="הכניסו את שם הגמ''ח" {...field} />
+                    <Input placeholder="הכניסו את שם הגמ\"ח" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
