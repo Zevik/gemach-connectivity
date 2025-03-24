@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,7 +10,6 @@ import Auth from "@/pages/Auth";
 import AuthCallback from "@/pages/AuthCallback";
 import Dashboard from "@/pages/Dashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
-import GemachsList from "@/pages/GemachsList";
 import GemachDetail from "@/pages/GemachDetail";
 import RegisterGemach from "@/pages/RegisterGemach";
 import RegistrationSuccess from "@/pages/RegistrationSuccess";
@@ -32,7 +30,6 @@ const App = () => (
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/gemachs" element={<GemachsList />} />
             <Route path="/gemach/:id" element={<GemachDetail />} />
             <Route path="/register-gemach" element={<RegisterGemach />} />
             <Route path="/registration-success" element={<RegistrationSuccess />} />
