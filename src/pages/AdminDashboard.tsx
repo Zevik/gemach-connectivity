@@ -1,0 +1,243 @@
+
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { toast } from '@/components/ui/use-toast';
+import { Check, Trash2, Eye, AlertTriangle } from 'lucide-react';
+
+interface PendingGemach {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  phone: string;
+  created_at: string;
+  owner_email: string | null;
+}
+
+const AdminDashboard = () => {
+  const { user, isLoading } = useAuth();
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [pendingGemachs, setPendingGemachs] = useState<PendingGemach[]>([]);
+  const [isLoadingGemachs, setIsLoadingGemachs] = useState<boolean>(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase.rpc('is_admin');
+        
+        if (error) {
+          console.error('Error checking admin status:', error);
+          return;
+        }
+        
+        setIsAdmin(data || false);
+        
+        if (data) {
+          fetchPendingGemachs();
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+      }
+    };
+
+    checkAdminStatus();
+  }, [user]);
+
+  const fetchPendingGemachs = async () => {
+    try {
+      setIsLoadingGemachs(true);
+      
+      const { data, error } = await supabase
+        .from('pending_gemachs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching pending gemachs:', error);
+        toast({
+          title: "שגיאה בטעינת נתונים",
+          description: "לא ניתן לטעון את רשימת הגמ\"חים הממתינים לאישור",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setPendingGemachs(data || []);
+    } catch (error) {
+      console.error('Error fetching pending gemachs:', error);
+    } finally {
+      setIsLoadingGemachs(false);
+    }
+  };
+
+  const approveGemach = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('gemachs')
+        .update({ is_approved: true })
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error approving gemach:', error);
+        toast({
+          title: "שגיאה באישור הגמ\"ח",
+          description: "לא ניתן לאשר את הגמ\"ח. נסה שוב מאוחר יותר",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      toast({
+        title: "הגמ\"ח אושר בהצלחה",
+        description: "הגמ\"ח יופיע כעת ברשימה הראשית",
+      });
+      
+      fetchPendingGemachs();
+    } catch (error) {
+      console.error('Error approving gemach:', error);
+    }
+  };
+
+  const deleteGemach = async (id: string) => {
+    if (!confirm("האם אתה בטוח שברצונך למחוק את הגמ\"ח הזה? פעולה זו אינה ניתנת לביטול.")) {
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('gemachs')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('Error deleting gemach:', error);
+        toast({
+          title: "שגיאה במחיקת הגמ\"ח",
+          description: "לא ניתן למחוק את הגמ\"ח. נסה שוב מאוחר יותר",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      toast({
+        title: "הגמ\"ח נמחק בהצלחה",
+      });
+      
+      fetchPendingGemachs();
+    } catch (error) {
+      console.error('Error deleting gemach:', error);
+    }
+  };
+
+  // אם המשתמש לא מחובר, הפנה אותו לדף ההתחברות
+  if (!isLoading && !user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // אם המשתמש לא מנהל, הפנה אותו לדף הראשי
+  if (!isLoading && user && !isAdmin) {
+    return (
+      <div className="container mx-auto px-4 py-8 text-center" dir="rtl">
+        <AlertTriangle className="mx-auto h-16 w-16 text-yellow-500 mb-4" />
+        <h1 className="text-3xl font-bold mb-4">אין לך הרשאות מנהל</h1>
+        <p className="mb-6">רק משתמשים עם הרשאות מנהל יכולים לגשת לדף זה.</p>
+        <Button onClick={() => navigate('/dashboard')}>חזרה ללוח הבקרה</Button>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="w-16 h-16 border-t-4 border-primary border-solid rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8" dir="rtl">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">ניהול גמ&quot;חים</h1>
+        <Button onClick={() => navigate('/dashboard')} variant="outline">חזרה ללוח הבקרה</Button>
+      </div>
+      
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>גמ&quot;חים הממתינים לאישור</CardTitle>
+          <CardDescription>אשר או דחה גמ&quot;חים שנוספו למערכת</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingGemachs ? (
+            <div className="flex justify-center py-8">
+              <div className="w-12 h-12 border-t-4 border-primary border-solid rounded-full animate-spin"></div>
+            </div>
+          ) : pendingGemachs.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>אין גמ&quot;חים הממתינים לאישור כרגע</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>שם הגמ&quot;ח</TableHead>
+                    <TableHead>קטגוריה</TableHead>
+                    <TableHead>יוצר</TableHead>
+                    <TableHead>תאריך יצירה</TableHead>
+                    <TableHead>פעולות</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingGemachs.map((gemach) => (
+                    <TableRow key={gemach.id}>
+                      <TableCell className="font-medium">{gemach.name}</TableCell>
+                      <TableCell>{gemach.category}</TableCell>
+                      <TableCell>{gemach.owner_email || 'לא ידוע'}</TableCell>
+                      <TableCell>{new Date(gemach.created_at).toLocaleDateString('he-IL')}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => navigate(`/gemach/${gemach.id}`)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="default" 
+                            size="sm" 
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() => approveGemach(gemach.id)}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => deleteGemach(gemach.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default AdminDashboard;

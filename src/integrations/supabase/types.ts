@@ -39,6 +39,13 @@ export type Database = {
             referencedRelation: "gemachs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "gemach_images_gemach_id_fkey"
+            columns: ["gemach_id"]
+            isOneToOne: false
+            referencedRelation: "pending_gemachs"
+            referencedColumns: ["id"]
+          },
         ]
       }
       gemachs: {
@@ -182,11 +189,46 @@ export type Database = {
             referencedRelation: "gemachs"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "reviews_gemach_id_fkey"
+            columns: ["gemach_id"]
+            isOneToOne: false
+            referencedRelation: "pending_gemachs"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      pending_gemachs: {
+        Row: {
+          address: string | null
+          category: string | null
+          city: string | null
+          created_at: string | null
+          description: string | null
+          email: string | null
+          facebook_url: string | null
+          featured: boolean | null
+          fee_details: string | null
+          has_fee: boolean | null
+          hours: string | null
+          id: string | null
+          is_approved: boolean | null
+          lat: number | null
+          lng: number | null
+          location_instructions: string | null
+          manager_phone: string | null
+          name: string | null
+          neighborhood: string | null
+          owner_email: string | null
+          owner_id: string | null
+          phone: string | null
+          updated_at: string | null
+          website_url: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       is_admin: {
