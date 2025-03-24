@@ -15,7 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import * as z from 'zod';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,21 +26,12 @@ import { neighborhoods, categories } from '@/data/constants';
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "שם הגמ״ח חייב להיות לפחות 2 תווים" }),
-  category: z.string({ required_error: "יש לבחור קטגוריה" }),
-  neighborhood: z.string({ required_error: "יש לבחור שכונה" }),
-  description: z.string().min(10, { message: "התיאור חייב להיות לפחות 10 תווים" }),
-  has_fee: z.boolean().default(false),
-  fee_details: z.string().optional(),
-  address: z.string().min(5, { message: "הכתובת חייבת להיות לפחות 5 תווים" }),
-  location_instructions: z.string().optional(),
-  phone: z.string().min(9, { message: "מספר טלפון לא תקין" }),
-  manager_phone: z.string().optional(),
-  phone_alternative: z.string().optional(),
-  email: z.string().email({ message: "כתובת אימייל לא תקינה" }).optional().or(z.literal('')),
+  category: z.string().min(1, { message: "יש לבחור קטגוריה" }),
+  neighborhood: z.string().min(1, { message: "יש לבחור שכונה" }),
+  address: z.string().min(5, { message: "יש להזין כתובת מלאה" }),
+  phone: z.string().min(9, { message: "יש להזין מספר טלפון תקין" }),
+  description: z.string().min(10, { message: "יש להזין תיאור של לפחות 10 תווים" }),
   hours: z.string().min(2, { message: "יש להזין שעות פעילות" }),
-  website_url: z.string().url({ message: "כתובת אתר לא תקינה" }).optional().or(z.literal('')),
-  facebook_url: z.string().url({ message: "כתובת פייסבוק לא תקינה" }).optional().or(z.literal('')),
-  images: z.any().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -51,7 +42,18 @@ const RegisterGemach = () => {
   const { user, isLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const { register, handleSubmit, setValue, watch, formState: { isSubmitting: formSubmitting } } = useForm<FormData>();
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      category: '',
+      neighborhood: '',
+      address: '',
+      phone: '',
+      description: '',
+      hours: '',
+    }
+  });
 
   const onSubmit = async (data: FormData) => {
     if (!user) {
@@ -131,17 +133,18 @@ const RegisterGemach = () => {
                 </label>
                 <Input
                   id="name"
-                  {...register('name', { required: true })}
+                  {...register('name')}
                 />
+                {errors.name && (
+                  <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+                )}
               </div>
 
               <div>
                 <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
                   קטגוריה
                 </label>
-                <Select 
-                  onValueChange={(value) => setValue('category', value)}
-                >
+                <Select onValueChange={(value) => setValue('category', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="בחר קטגוריה" />
                   </SelectTrigger>
@@ -153,15 +156,16 @@ const RegisterGemach = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.category && (
+                  <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>
+                )}
               </div>
 
               <div>
                 <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700 mb-1">
                   שכונה
                 </label>
-                <Select 
-                  onValueChange={(value) => setValue('neighborhood', value)}
-                >
+                <Select onValueChange={(value) => setValue('neighborhood', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="בחר שכונה" />
                   </SelectTrigger>
@@ -173,6 +177,9 @@ const RegisterGemach = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.neighborhood && (
+                  <p className="text-red-500 text-sm mt-1">{errors.neighborhood.message}</p>
+                )}
               </div>
 
               <div>
@@ -181,8 +188,11 @@ const RegisterGemach = () => {
                 </label>
                 <Input
                   id="address"
-                  {...register('address', { required: true })}
+                  {...register('address')}
                 />
+                {errors.address && (
+                  <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>
+                )}
               </div>
 
               <div>
@@ -192,8 +202,11 @@ const RegisterGemach = () => {
                 <Input
                   id="phone"
                   type="tel"
-                  {...register('phone', { required: true })}
+                  {...register('phone')}
                 />
+                {errors.phone && (
+                  <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
+                )}
               </div>
 
               <div>
@@ -202,8 +215,11 @@ const RegisterGemach = () => {
                 </label>
                 <Input
                   id="hours"
-                  {...register('hours', { required: true })}
+                  {...register('hours')}
                 />
+                {errors.hours && (
+                  <p className="text-red-500 text-sm mt-1">{errors.hours.message}</p>
+                )}
               </div>
 
               <div>
@@ -212,9 +228,12 @@ const RegisterGemach = () => {
                 </label>
                 <Textarea
                   id="description"
-                  {...register('description', { required: true })}
+                  {...register('description')}
                   rows={4}
                 />
+                {errors.description && (
+                  <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
+                )}
               </div>
 
               <div>
@@ -234,9 +253,9 @@ const RegisterGemach = () => {
                 <Button 
                   type="submit"
                   className="w-full md:w-auto px-8"
-                  disabled={formSubmitting}
+                  disabled={isSubmitting}
                 >
-                  {formSubmitting ? 'שולח...' : 'רישום הגמ״ח'}
+                  {isSubmitting ? 'שולח...' : 'רישום הגמ״ח'}
                 </Button>
               </div>
             </form>
