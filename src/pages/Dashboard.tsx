@@ -1,11 +1,12 @@
 
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Dashboard = () => {
   const { user, isLoading, signOut } = useAuth();
+  const navigate = useNavigate();
 
   // אם המשתמש לא מחובר, הפנה אותו לדף ההתחברות
   if (!isLoading && !user) {
@@ -46,7 +47,7 @@ const Dashboard = () => {
             <CardDescription>נהל את הגמ"חים שרשמת</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full">הוסף גמ"ח חדש</Button>
+            <Button className="w-full" onClick={() => navigate('/register-gemach')}>הוסף גמ"ח חדש</Button>
           </CardContent>
         </Card>
         
