@@ -312,23 +312,6 @@ const Index = () => {
               <h2 className="text-2xl md:text-3xl font-bold text-center">
                 גמ״חים מובילים
               </h2>
-              {user && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={addGemachsToSupabase}
-                  disabled={isAddingToSupabase}
-                >
-                  {isAddingToSupabase ? (
-                    <>
-                      <Loader2 className="h-4 w-4 ml-2 animate-spin" />
-                      מוסיף גמ״חים...
-                    </>
-                  ) : (
-                    "הוסף 10 גמ״חים לדוגמה"
-                  )}
-                </Button>
-              )}
             </div>
             
             {isLoading ? (
@@ -373,11 +356,6 @@ const Index = () => {
                 ) : (
                   <div className="col-span-full py-10 text-center text-gray-500">
                     לא נמצאו גמ״חים התואמים את החיפוש. 
-                    {user && (
-                      <p className="mt-2">
-                        לחץ על כפתור "הוסף 10 גמ״חים לדוגמה" כדי להוסיף נתונים לדוגמה.
-                      </p>
-                    )}
                   </div>
                 )}
               </div>

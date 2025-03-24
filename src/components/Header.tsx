@@ -45,7 +45,7 @@ const Header = () => {
               </>
             ) : (
               <Link to="/auth">
-                <Button variant="outline" className="text-white border-white hover:bg-sky-700 hover:text-white">התחבר / הרשם</Button>
+                <Button className="bg-transparent text-white border-white hover:bg-sky-700 hover:text-white">התחבר / הרשם</Button>
               </Link>
             )}
           </div>
