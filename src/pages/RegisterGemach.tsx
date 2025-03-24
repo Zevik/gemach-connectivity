@@ -92,7 +92,7 @@ const RegisterGemach = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
+    <div className="container mx-auto px-4 py-8 max-w-3xl" dir="rtl">
       <h1 className="text-3xl font-bold mb-8 text-center text-primary">הרשמת גמ&quot;ח חדש</h1>
       <p className="text-center text-gray-600 mb-8">
         השתמשו בטופס זה כדי להתחבר עם קהילת עם שירותים ומוצרים להשאלה והפצת האפשרויות שלך

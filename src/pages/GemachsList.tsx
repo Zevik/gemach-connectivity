@@ -87,7 +87,7 @@ const GemachsList = () => {
   const featuredGemachs = gemachs.filter(gemach => gemach.isFeatured);
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8" dir="rtl">
       {/* Header section */}
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-4 text-primary">מצא את הגמ&quot;חים בירושלים</h1>
