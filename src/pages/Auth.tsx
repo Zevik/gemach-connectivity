@@ -87,10 +87,7 @@ const Auth = () => {
     try {
       setIsLoading(true);
       setError('');
-      await registerUser(values.email, values.password, {
-        fullName: values.fullName,
-        phone: values.phone,
-      });
+      await registerUser(values.email, values.password, values.fullName);
       navigate('/dashboard');
     } catch (err) {
       setError('הרשמה נכשלה. ייתכן שהאימייל כבר בשימוש או שיש שגיאה אחרת.');

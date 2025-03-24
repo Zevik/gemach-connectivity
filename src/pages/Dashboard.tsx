@@ -289,7 +289,7 @@ const Dashboard = () => {
                   <div>
                     <h3 className="font-medium">התראות במייל</h3>
                     <p className="text-sm text-gray-500">
-                      קבל התראות במייל על רישום גמ״חים חדשים ({user.email})
+                      קבל התראות במייל על רישום גמ״חים חדשים ({user?.email})
                     </p>
                   </div>
                   <Switch
