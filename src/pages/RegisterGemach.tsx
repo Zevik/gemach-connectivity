@@ -23,7 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 const neighborhoods = [
-  "ארמון הנציב - תלפ\"ז", "ארנונה", "בית הכרם", "בית וגן", "בקעה", 
+  "ארמון הנציב - תלפ״ז", "ארנונה", "בית הכרם", "בית וגן", "בקעה", 
   "גבעת מרדכי", "גבעת משואה", "גילה", "הגבעה הצרפתית", "הולילנד",
   "הר חומה", "הר נוף", "הרובע היהודי העיר העתיקה", "טלביה", "מלחה",
   "מרכז העיר - נחלת שבעה", "משכנות האומה", "נווה יעקב", "נחלאות", "ניות",
@@ -39,7 +39,7 @@ const categories = [
 ];
 
 const formSchema = z.object({
-  name: z.string().min(2, { message: "שם הגמ\"ח חייב להיות לפחות 2 תווים" }),
+  name: z.string().min(2, { message: "שם הגמ״ח חייב להיות לפחות 2 תווים" }),
   category: z.string({ required_error: "יש לבחור קטגוריה" }),
   neighborhood: z.string({ required_error: "יש לבחור שכונה" }),
   description: z.string().min(10, { message: "התיאור חייב להיות לפחות 10 תווים" }),
@@ -98,7 +98,7 @@ const RegisterGemach = () => {
     if (!user) {
       toast({
         title: "נדרשת התחברות",
-        description: "יש להתחבר למערכת כדי לרשום גמ\"ח חדש",
+        description: "יש להתחבר למערכת כדי לרשום גמ״ח חדש",
         variant: "destructive",
       });
       navigate('/auth');
@@ -173,18 +173,18 @@ const RegisterGemach = () => {
       }
       
       toast({
-        title: "הגמ\"ח נרשם בהצלחה!",
-        description: "תודה שבחרת להרשם במרכז הגמ\"חים. הפרטים יועברו לצוות לבדיקה.",
+        title: "הגמ״ח נרשם בהצלחה!",
+        description: "תודה שבחרת להרשם במרכז הגמ״חים. הפרטים יועברו לצוות לבדיקה.",
       });
       
       setTimeout(() => {
-        navigate('/gemachs');
+        navigate('/registration-success');
       }, 2000);
     } catch (error) {
       console.error('Error submitting form:', error);
       toast({
-        title: "שגיאה ברישום הגמ\"ח",
-        description: error instanceof Error ? error.message : "אירעה שגיאה בעת רישום הגמ\"ח. אנא נסו שנית מאוחר יותר.",
+        title: "שגיאה ברישום הגמ״ח",
+        description: error instanceof Error ? error.message : "אירעה שגיאה בעת רישום הגמ״ח. אנא נסו שנית מאוחר יותר.",
         variant: "destructive",
       });
     } finally {
@@ -210,7 +210,7 @@ const RegisterGemach = () => {
                 <FormItem>
                   <FormLabel className="text-lg">שם הגמ״ח *</FormLabel>
                   <FormControl>
-                    <Input placeholder="הכניסו את שם הגמ\"ח" {...field} />
+                    <Input placeholder="הכניסו את שם הגמ״ח" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -252,7 +252,7 @@ const RegisterGemach = () => {
                   <FormLabel className="text-lg">תיאור מפורט של הגמ״ח *</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="אנא פרטו: תיאור של הגמ\"ח, לאיזה צורך, מה ניתן להשאיל, האם יש תנאים מיוחדים" 
+                      placeholder="אנא פרטו: תיאור של הגמ״ח, לאיזה צורך, מה ניתן להשאיל, האם יש תנאים מיוחדים" 
                       className="min-h-[120px]"
                       {...field} 
                     />
@@ -292,7 +292,7 @@ const RegisterGemach = () => {
                       <FormLabel>פרטי התשלום</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder="פרטו את עלות השימוש בגמ\"ח ולאן מיועדים הרווחים" 
+                          placeholder="פרטו את עלות השימוש בגמ״ח ולאן מיועדים הרווחים" 
                           {...field} 
                         />
                       </FormControl>
@@ -357,7 +357,7 @@ const RegisterGemach = () => {
                     <FormLabel>הוראות הגעה</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="הוראות מפורטות איך להגיע לגמ\"ח" 
+                        placeholder="הוראות מפורטות איך להגיע לגמ״ח" 
                         {...field} 
                       />
                     </FormControl>

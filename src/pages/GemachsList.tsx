@@ -8,7 +8,7 @@ import { Search, MapPin, Clock, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const neighborhoods = [
-  "ארמון הנציב - תלפ\"ז", "ארנונה", "בית הכרם", "בית וגן", "בקעה", 
+  "ארמון הנציב - תלפ״ז", "ארנונה", "בית הכרם", "בית וגן", "בקעה", 
   "גבעת מרדכי", "גבעת משואה", "גילה", "הגבעה הצרפתית", "הולילנד",
   "הר חומה", "הר נוף", "הרובע היהודי העיר העתיקה", "טלביה", "מלחה",
   "מרכז העיר - נחלת שבעה", "משכנות האומה", "נווה יעקב", "נחלאות", "ניות",
@@ -27,36 +27,36 @@ const categories = [
 const dummyGemachs = [
   {
     id: 1,
-    name: "גמ\"ח ציוד רפואי",
+    name: "גמ״ח ציוד רפואי",
     category: "סיוע רפואי",
     neighborhood: "רמות אלון",
     address: "רחוב שירת הים 12, רמות אלון",
     phone: "02-456-7890",
-    description: "גמ\"ח לציוד רפואי - כסאות גלגלים, קביים, מדי סוכר, מדי לחץ דם ועוד.",
+    description: "גמ״ח לציוד רפואי - כסאות גלגלים, קביים, מדי סוכר, מדי לחץ דם ועוד.",
     image: "/lovable-uploads/73990076-631e-4f06-9339-bffc197e7186.png",
     hours: "ימים א'-ה' 9:00-13:00, 16:00-19:00",
     isFeatured: true
   },
   {
     id: 2,
-    name: "גמ\"ח בגדי ילדים",
+    name: "גמ״ח בגדי ילדים",
     category: "בגדים",
     neighborhood: "קרית משה | גבעת שאול",
     address: "רחוב הרב צבי יהודה 15, גבעת שאול",
     phone: "02-987-6543",
-    description: "גמ\"ח בגדי ילדים לכל הגילאים. כל המידות, בגדי שבת וחול.",
+    description: "גמ״ח בגדי ילדים לכל הגילאים. כל המידות, בגדי שבת וחול.",
     image: "/lovable-uploads/e62c316d-cd10-49e4-971d-ea2969cfccd8.png",
     hours: "יום א' 10:00-16:00",
     isFeatured: true
   },
   {
     id: 3,
-    name: "גמ\"ח ספרי תורה",
+    name: "גמ״ח ספרי תורה",
     category: "ספרים",
     neighborhood: "בית וגן",
     address: "רחוב עוזיאל 30, בית וגן",
     phone: "02-123-4567",
-    description: "גמ\"ח לספרי קודש, ספרי לימוד וחוברות לימוד.",
+    description: "גמ״ח לספרי קודש, ספרי לימוד וחוברות לימוד.",
     image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=1974&auto=format&fit=crop",
     hours: "ימים א'-ה' 9:00-13:00, 16:00-19:00",
     isFeatured: true
@@ -101,7 +101,7 @@ const GemachsList = () => {
         <div className="flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[250px] relative">
             <Input
-              placeholder="חיפוש גמ\"ח..."
+              placeholder="חיפוש גמ״ח..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
