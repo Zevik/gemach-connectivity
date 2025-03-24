@@ -19,6 +19,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const neighborhoods = [
   "ארמון הנציב - תלפ\"ז", "ארנונה", "בית הכרם", "בית וגן", "בקעה", 
@@ -41,15 +43,17 @@ const formSchema = z.object({
   category: z.string({ required_error: "יש לבחור קטגוריה" }),
   neighborhood: z.string({ required_error: "יש לבחור שכונה" }),
   description: z.string().min(10, { message: "התיאור חייב להיות לפחות 10 תווים" }),
-  isPrivate: z.boolean().default(false),
+  has_fee: z.boolean().default(false),
+  fee_details: z.string().optional(),
   address: z.string().min(5, { message: "הכתובת חייבת להיות לפחות 5 תווים" }),
+  location_instructions: z.string().optional(),
   phone: z.string().min(9, { message: "מספר טלפון לא תקין" }),
-  phoneWhatsapp: z.string().optional(),
-  phoneAlternative: z.string().optional(),
-  email: z.string().email({ message: "כתובת אימייל לא תקינה" }).optional(),
-  openingHours: z.string().min(2, { message: "יש להזין שעות פעילות" }),
-  website: z.string().url({ message: "כתובת אתר לא תקינה" }).optional().or(z.literal('')),
-  facebook: z.string().url({ message: "כתובת פייסבוק לא תקינה" }).optional().or(z.literal('')),
+  manager_phone: z.string().optional(),
+  phone_alternative: z.string().optional(),
+  email: z.string().email({ message: "כתובת אימייל לא תקינה" }).optional().or(z.literal('')),
+  hours: z.string().min(2, { message: "יש להזין שעות פעילות" }),
+  website_url: z.string().url({ message: "כתובת אתר לא תקינה" }).optional().or(z.literal('')),
+  facebook_url: z.string().url({ message: "כתובת פייסבוק לא תקינה" }).optional().or(z.literal('')),
   images: z.any().optional(),
 });
 
@@ -58,37 +62,134 @@ type FormData = z.infer<typeof formSchema>;
 const RegisterGemach = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { user, isLoading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       description: '',
-      isPrivate: false,
+      has_fee: false,
+      fee_details: '',
       address: '',
+      location_instructions: '',
       phone: '',
-      phoneWhatsapp: '',
-      phoneAlternative: '',
+      manager_phone: '',
+      phone_alternative: '',
       email: '',
-      openingHours: '',
-      website: '',
-      facebook: '',
+      hours: '',
+      website_url: '',
+      facebook_url: '',
     },
   });
 
-  const onSubmit = (data: FormData) => {
-    console.log('Form submitted:', data);
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      // Convert FileList to array and limit to 3 files
+      const fileArray = Array.from(files).slice(0, 3);
+      setSelectedFiles(fileArray);
+    }
+  };
+
+  const onSubmit = async (data: FormData) => {
+    if (!user) {
+      toast({
+        title: "נדרשת התחברות",
+        description: "יש להתחבר למערכת כדי לרשום גמ\"ח חדש",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+
+    setIsSubmitting(true);
     
-    // כאן יש להוסיף לוגיקה לשליחת הנתונים לשרת
-    
-    toast({
-      title: "הגמ\"ח נרשם בהצלחה!",
-      description: "תודה שבחרת להרשם במרכז הגמ\"חים. הפרטים יועברו לצוות לבדיקה.",
-    });
-    
-    setTimeout(() => {
-      navigate('/gemachs');
-    }, 2000);
+    try {
+      // Insert gemach into database
+      const { data: gemachData, error: gemachError } = await supabase
+        .from('gemachs')
+        .insert({
+          owner_id: user.id,
+          name: data.name,
+          category: data.category,
+          description: data.description,
+          address: data.address,
+          neighborhood: data.neighborhood,
+          location_instructions: data.location_instructions || null,
+          phone: data.phone,
+          manager_phone: data.manager_phone || null,
+          email: data.email || null,
+          hours: data.hours,
+          has_fee: data.has_fee,
+          fee_details: data.fee_details || null,
+          website_url: data.website_url || null,
+          facebook_url: data.facebook_url || null,
+        })
+        .select('id')
+        .single();
+
+      if (gemachError) {
+        throw new Error(gemachError.message);
+      }
+
+      // Upload images if any were selected
+      if (selectedFiles.length > 0 && gemachData) {
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const file = selectedFiles[i];
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${gemachData.id}/${Date.now()}.${fileExt}`;
+          const filePath = `${fileName}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('gemach-images')
+            .upload(filePath, file);
+            
+          if (uploadError) {
+            console.error('Error uploading image:', uploadError);
+            continue;
+          }
+          
+          // Get the public URL for the uploaded image
+          const { data: urlData } = supabase.storage
+            .from('gemach-images')
+            .getPublicUrl(filePath);
+            
+          // Insert image record
+          const { error: imageError } = await supabase
+            .from('gemach_images')
+            .insert({
+              gemach_id: gemachData.id,
+              storage_path: filePath,
+              is_primary: i === 0 // First image is primary
+            });
+            
+          if (imageError) {
+            console.error('Error saving image record:', imageError);
+          }
+        }
+      }
+      
+      toast({
+        title: "הגמ\"ח נרשם בהצלחה!",
+        description: "תודה שבחרת להרשם במרכז הגמ\"חים. הפרטים יועברו לצוות לבדיקה.",
+      });
+      
+      setTimeout(() => {
+        navigate('/gemachs');
+      }, 2000);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast({
+        title: "שגיאה ברישום הגמ\"ח",
+        description: error instanceof Error ? error.message : "אירעה שגיאה בעת רישום הגמ\"ח. אנא נסו שנית מאוחר יותר.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -109,7 +210,7 @@ const RegisterGemach = () => {
                 <FormItem>
                   <FormLabel className="text-lg">שם הגמ״ח *</FormLabel>
                   <FormControl>
-                    <Input placeholder='הכניסו את שם הגמ"ח' {...field} />
+                    <Input placeholder="הכניסו את שם הגמ\"ח" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -151,7 +252,7 @@ const RegisterGemach = () => {
                   <FormLabel className="text-lg">תיאור מפורט של הגמ״ח *</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder='אנא פרטו: תיאור של הגמ"ח, לאיזה צורך, מה ניתן להשאיל, האם יש תנאים מיוחדים' 
+                      placeholder="אנא פרטו: תיאור של הגמ\"ח, לאיזה צורך, מה ניתן להשאיל, האם יש תנאים מיוחדים" 
                       className="min-h-[120px]"
                       {...field} 
                     />
@@ -166,7 +267,7 @@ const RegisterGemach = () => {
               <h3 className="text-lg font-medium mb-2">פרטי תשלום</h3>
               <FormField
                 control={form.control}
-                name="isPrivate"
+                name="has_fee"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0 mb-4">
                     <FormControl>
@@ -181,6 +282,25 @@ const RegisterGemach = () => {
                   </FormItem>
                 )}
               />
+
+              {form.watch("has_fee") && (
+                <FormField
+                  control={form.control}
+                  name="fee_details"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>פרטי התשלום</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="פרטו את עלות השימוש בגמ\"ח ולאן מיועדים הרווחים" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
             
             {/* מיקום */}
@@ -218,10 +338,28 @@ const RegisterGemach = () => {
                 control={form.control}
                 name="address"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="mb-4">
                     <FormLabel>כתובת מדויקת *</FormLabel>
                     <FormControl>
                       <Input placeholder="רחוב ומספר" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* הוראות הגעה */}
+              <FormField
+                control={form.control}
+                name="location_instructions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>הוראות הגעה</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="הוראות מפורטות איך להגיע לגמ\"ח" 
+                        {...field} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -251,7 +389,7 @@ const RegisterGemach = () => {
               {/* טלפון נייד */}
               <FormField
                 control={form.control}
-                name="phoneWhatsapp"
+                name="manager_phone"
                 render={({ field }) => (
                   <FormItem className="mb-4">
                     <FormLabel>טלפון נייד של המנהל/ת (וואטסאפ)</FormLabel>
@@ -266,7 +404,7 @@ const RegisterGemach = () => {
               {/* טלפון חלופי */}
               <FormField
                 control={form.control}
-                name="phoneAlternative"
+                name="phone_alternative"
                 render={({ field }) => (
                   <FormItem className="mb-4">
                     <FormLabel>טלפון חלופי של הגמ״ח (אם יש)</FormLabel>
@@ -297,7 +435,7 @@ const RegisterGemach = () => {
             {/* שעות פעילות */}
             <FormField
               control={form.control}
-              name="openingHours"
+              name="hours"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-lg">שעות פעילות *</FormLabel>
@@ -312,7 +450,7 @@ const RegisterGemach = () => {
             {/* קישור לאתר */}
             <FormField
               control={form.control}
-              name="website"
+              name="website_url"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>קישור לאתר (אם יש)</FormLabel>
@@ -327,7 +465,7 @@ const RegisterGemach = () => {
             {/* קישור לעמוד פייסבוק */}
             <FormField
               control={form.control}
-              name="facebook"
+              name="facebook_url"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>קישור לעמוד פייסבוק (אם יש)</FormLabel>
@@ -348,15 +486,53 @@ const RegisterGemach = () => {
                   <FormLabel className="text-lg">הוספת תמונה</FormLabel>
                   <div className="border-2 border-dashed border-gray-300 p-4 rounded-md text-center">
                     <p className="text-gray-500 text-sm mb-2">ניתן לגרור לכאן תמונות (עד 3 תמונות, כל תמונה עד 2MB בגודלה)</p>
-                    <Button type="button" variant="outline" className="mt-2">העלאת תמונות</Button>
+                    <Input 
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileChange}
+                      className="hidden"
+                      id="image-upload"
+                      ref={field.ref}
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="mt-2"
+                      onClick={() => document.getElementById('image-upload')?.click()}
+                    >
+                      העלאת תמונות
+                    </Button>
+                    {selectedFiles.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-sm text-gray-600">
+                          {selectedFiles.length} תמונות נבחרו
+                        </p>
+                        <div className="flex gap-2 mt-2 justify-center">
+                          {selectedFiles.map((file, index) => (
+                            <div key={index} className="relative">
+                              <img 
+                                src={URL.createObjectURL(file)} 
+                                alt={`תמונה ${index + 1}`}
+                                className="h-16 w-16 object-cover rounded"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
             
-            <Button type="submit" className="w-full py-6 text-lg">
-              שליחת הרשמה
+            <Button 
+              type="submit" 
+              className="w-full py-6 text-lg"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'שולח...' : 'שליחת הרשמה'}
             </Button>
             
             <p className="text-sm text-gray-500 text-center mt-4">

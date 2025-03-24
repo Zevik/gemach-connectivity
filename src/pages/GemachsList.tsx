@@ -101,7 +101,7 @@ const GemachsList = () => {
         <div className="flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[250px] relative">
             <Input
-              placeholder='חיפוש גמ"ח...'
+              placeholder="חיפוש גמ\"ח..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -148,8 +148,8 @@ const GemachsList = () => {
       </div>
 
       <div className="flex gap-4 justify-center mb-12">
-        <Button variant="outline" className="px-6">
-          רישום הגמ״ח שלך
+        <Button variant="outline" className="px-6" asChild>
+          <Link to="/register-gemach">רישום הגמ״ח שלך</Link>
         </Button>
         <Button variant="default" className="px-6">
           צפייה בכל הגמ״חים
@@ -297,9 +297,9 @@ const GemachsList = () => {
           <div>
             <h3 className="text-lg font-bold mb-4">קישורים מהירים</h3>
             <ul className="space-y-2">
-              <li><a href="#" className="text-blue-600 hover:underline">דף הבית</a></li>
-              <li><a href="#" className="text-blue-600 hover:underline">חיפוש גמ״ח</a></li>
-              <li><a href="#" className="text-blue-600 hover:underline">רישום גמ״ח</a></li>
+              <li><Link to="/" className="text-blue-600 hover:underline">דף הבית</Link></li>
+              <li><Link to="/gemachs" className="text-blue-600 hover:underline">חיפוש גמ״ח</Link></li>
+              <li><Link to="/register-gemach" className="text-blue-600 hover:underline">רישום גמ״ח</Link></li>
             </ul>
           </div>
           <div>

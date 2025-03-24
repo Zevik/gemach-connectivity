@@ -9,6 +9,116 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      gemach_images: {
+        Row: {
+          created_at: string | null
+          gemach_id: string | null
+          id: string
+          is_primary: boolean | null
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string | null
+          gemach_id?: string | null
+          id?: string
+          is_primary?: boolean | null
+          storage_path: string
+        }
+        Update: {
+          created_at?: string | null
+          gemach_id?: string | null
+          id?: string
+          is_primary?: boolean | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gemach_images_gemach_id_fkey"
+            columns: ["gemach_id"]
+            isOneToOne: false
+            referencedRelation: "gemachs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gemachs: {
+        Row: {
+          address: string
+          category: string
+          city: string | null
+          created_at: string | null
+          description: string
+          email: string | null
+          facebook_url: string | null
+          featured: boolean | null
+          fee_details: string | null
+          has_fee: boolean | null
+          hours: string
+          id: string
+          is_approved: boolean | null
+          lat: number | null
+          lng: number | null
+          location_instructions: string | null
+          manager_phone: string | null
+          name: string
+          neighborhood: string
+          owner_id: string | null
+          phone: string
+          updated_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          address: string
+          category: string
+          city?: string | null
+          created_at?: string | null
+          description: string
+          email?: string | null
+          facebook_url?: string | null
+          featured?: boolean | null
+          fee_details?: string | null
+          has_fee?: boolean | null
+          hours: string
+          id?: string
+          is_approved?: boolean | null
+          lat?: number | null
+          lng?: number | null
+          location_instructions?: string | null
+          manager_phone?: string | null
+          name: string
+          neighborhood: string
+          owner_id?: string | null
+          phone: string
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          address?: string
+          category?: string
+          city?: string | null
+          created_at?: string | null
+          description?: string
+          email?: string | null
+          facebook_url?: string | null
+          featured?: boolean | null
+          fee_details?: string | null
+          has_fee?: boolean | null
+          hours?: string
+          id?: string
+          is_approved?: boolean | null
+          lat?: number | null
+          lng?: number | null
+          location_instructions?: string | null
+          manager_phone?: string | null
+          name?: string
+          neighborhood?: string
+          owner_id?: string | null
+          phone?: string
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -36,12 +146,53 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          gemach_id: string | null
+          id: string
+          rating: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          gemach_id?: string | null
+          id?: string
+          rating: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          gemach_id?: string | null
+          id?: string
+          rating?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_gemach_id_fkey"
+            columns: ["gemach_id"]
+            isOneToOne: false
+            referencedRelation: "gemachs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
