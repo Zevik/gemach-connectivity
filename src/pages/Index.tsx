@@ -126,47 +126,10 @@ const Index = () => {
   const [gemachs, setGemachs] = useState<any[]>([]);
   const [selectedGemach, setSelectedGemach] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAddingToSupabase, setIsAddingToSupabase] = useState(false);
 
-  // Load gemachs from Supabase
-  useEffect(() => {
-    const fetchGemachs = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('gemachs')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          throw error;
-        }
-        
-        if (data && data.length > 0) {
-          setGemachs(data);
-        } else {
-          // If no gemachs in database, show empty state
-          setGemachs([]);
-        }
-      } catch (error) {
-        console.error('Error fetching gemachs:', error);
-        // Show empty state on error
-        setGemachs([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchGemachs();
-  }, []);
-
-  // Function to add the new gemachs to Supabase
+  // Function to add the gemachs to Supabase directly
   const addGemachsToSupabase = async () => {
-    if (isAddingToSupabase) return;
-    
     try {
-      setIsAddingToSupabase(true);
-      
       // First clear any existing gemachs to avoid duplicates
       const { error: deleteError } = await supabase
         .from('gemachs')
@@ -194,24 +157,51 @@ const Index = () => {
         throw error;
       }
 
-      toast({
-        title: "הגמ\"חים נוספו בהצלחה",
-        description: `${formattedGemachs.length} גמ\"חים נוספו למסד הנתונים`,
-      });
-
-      // Refresh the page to show the new gemachs
-      window.location.reload();
+      console.log('Successfully added gemachs to Supabase:', data);
+      return data;
     } catch (error: any) {
       console.error('Error adding gemachs to Supabase:', error);
-      toast({
-        title: "שגיאה בהוספת הגמ\"חים",
-        description: error.message || "אירעה שגיאה בהוספת הגמ\"חים למסד הנתונים",
-        variant: "destructive",
-      });
-    } finally {
-      setIsAddingToSupabase(false);
+      return null;
     }
   };
+
+  // Load gemachs from Supabase - if none exist, add the new ones
+  useEffect(() => {
+    const fetchGemachs = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('gemachs')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          throw error;
+        }
+        
+        if (data && data.length > 0) {
+          setGemachs(data);
+        } else {
+          // If no gemachs in database, add the new ones automatically
+          console.log("No gemachs found in Supabase, adding the example gemachs...");
+          const newData = await addGemachsToSupabase();
+          if (newData) {
+            setGemachs(newData);
+          } else {
+            setGemachs([]);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching gemachs:', error);
+        // Show empty state on error
+        setGemachs([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGemachs();
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
