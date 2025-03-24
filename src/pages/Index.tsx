@@ -13,73 +13,107 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 
-// דוגמה של נתוני גמ"חים לבדיקה
-const dummyGemachs = [
+// 10 גמחים חדשים לדחיפה ישירות לסופבייס
+const newGemachs = [
   {
-    id: 1,
     name: "גמ\"ח כלי עבודה",
     category: "כלי בית",
     neighborhood: "רחביה",
     address: "רחוב קרן היסוד 19, ירושלים",
     phone: "02-123-4567",
     hours: "א'-ה' 9:00-19:00",
-    description: "השאלת כלי עבודה לבית ולגינה",
-    image: "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+    description: "השאלת כלי עבודה לבית ולגינה. כולל מקדחות, פטישים, מברגים, כלי גינון ועוד.",
+    image_url: "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
   },
   {
-    id: 2,
     name: "גמ\"ח ציוד רפואי",
     category: "סיוע רפואי",
     neighborhood: "בית וגן",
     address: "רחוב הפסגה 42, ירושלים",
     phone: "02-765-4321",
     hours: "א'-ה' 10:00-18:00, ו' 9:00-12:00",
-    description: "השאלת ציוד רפואי לנזקקים",
-    image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2130&q=80"
+    description: "השאלת ציוד רפואי לנזקקים. כיסאות גלגלים, קביים, הליכונים, מכשירי אדים ועוד.",
+    image_url: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2130&q=80"
   },
   {
-    id: 3,
     name: "גמ\"ח ספרי לימוד",
     category: "ספרים",
     neighborhood: "הר נוף",
     address: "רחוב קצנלבוגן 32, ירושלים",
     phone: "02-987-6543",
     hours: "א', ג', ה' 16:00-20:00",
-    description: "השאלת ספרי לימוד לתלמידים",
-    image: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+    description: "השאלת ספרי לימוד לתלמידים בכל הגילאים. ספרי קודש, ספרי לימוד, וחוברות עבודה.",
+    image_url: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
   },
   {
-    id: 4,
     name: "גמ\"ח שמלות כלה",
     category: "עזרה לחתן וכלה",
     neighborhood: "גאולה",
     address: "רחוב מלכי ישראל 8, ירושלים",
     phone: "02-345-6789",
     hours: "א'-ה' 10:00-20:00",
-    description: "השאלת שמלות כלה וערב",
-    image: "https://images.unsplash.com/photo-1525257831700-383215253d18?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80"
+    description: "השאלת שמלות כלה וערב לכלות. מבחר רחב של עיצובים, גדלים וסגנונות.",
+    image_url: "https://images.unsplash.com/photo-1525257831700-383215253d18?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80"
   },
   {
-    id: 5,
     name: "גמ\"ח ריהוט",
     category: "ריהוט",
     neighborhood: "קרית משה | גבעת שאול",
     address: "רחוב הרב הרצוג 25, ירושלים",
     phone: "02-234-5678",
     hours: "א', ג', ה' 9:00-13:00",
-    description: "השאלת וחלוקת ריהוט לנזקקים",
-    image: "https://images.unsplash.com/photo-1538688525198-9b88f6f53126?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2074&q=80"
+    description: "השאלת וחלוקת ריהוט לנזקקים. ספות, שולחנות, כסאות, מיטות ועוד.",
+    image_url: "https://images.unsplash.com/photo-1538688525198-9b88f6f53126?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2074&q=80"
   },
   {
-    id: 6,
     name: "גמ\"ח מוצרי תינוקות",
     category: "מוצרי תינוקות",
     neighborhood: "רמות אלון",
     address: "שדרות גולדה מאיר 12, ירושלים",
     phone: "02-876-5432",
     hours: "ב', ד' 16:00-21:00",
-    description: "השאלת ציוד ומוצרים לתינוקות ופעוטות",
-    image: "https://images.unsplash.com/photo-1519689680058-324335c77eba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+    description: "השאלת ציוד ומוצרים לתינוקות ופעוטות. עגלות, מיטות, כסאות אוכל, אמבטיות ועוד.",
+    image_url: "https://images.unsplash.com/photo-1519689680058-324335c77eba?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+  },
+  {
+    name: "גמ\"ח חתונות והפקת אירועים",
+    category: "עזרה לחתן וכלה",
+    neighborhood: "בית ישראל",
+    address: "רחוב שמואל הנביא 32, ירושלים",
+    phone: "02-589-3214",
+    hours: "א'-ה' 10:00-19:00",
+    description: "עזרה בארגון והפקת חתונות לזוגות, כולל השאלת אביזרי חתונה, סידורי פרחים וייעוץ.",
+    image_url: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+  },
+  {
+    name: "גמ\"ח מחשבים וטכנולוגיה",
+    category: "טכנולוגיה",
+    neighborhood: "קטמון",
+    address: "רחוב חזקיהו המלך 15, ירושלים",
+    phone: "02-534-7819",
+    hours: "ב', ד' 16:00-21:00",
+    description: "השאלת מחשבים, טאבלטים וציוד טכנולוגי לתלמידים ולמשפחות נזקקות. כולל תיקון מכשירים וייעוץ.",
+    image_url: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+  },
+  {
+    name: "גמ\"ח ציוד לשבת",
+    category: "יודאיקה",
+    neighborhood: "נווה יעקב",
+    address: "רחוב משה דיין 28, ירושלים",
+    phone: "02-954-6321",
+    hours: "א'-ה' 9:00-13:00, 16:00-19:00",
+    description: "השאלת פלטות שבת, מיחמים, פמוטים ואביזרי שבת נוספים לאירוח משפחתי.",
+    image_url: "https://images.unsplash.com/photo-1576092762791-dd9e2220abd1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2080&q=80"
+  },
+  {
+    name: "גמ\"ח כלי נגינה",
+    category: "חינוך ופנאי",
+    neighborhood: "תלפיות",
+    address: "רחוב פייר קניג 37, ירושלים",
+    phone: "02-673-4590",
+    hours: "ב', ד' 14:00-19:00",
+    description: "השאלת כלי נגינה לילדים ולנוער המעוניינים ללמוד נגינה אך ידם אינה משגת.",
+    image_url: "https://images.unsplash.com/photo-1511192336575-5a79af67a629?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80"
   }
 ];
 
@@ -92,6 +126,7 @@ const Index = () => {
   const [gemachs, setGemachs] = useState<any[]>([]);
   const [selectedGemach, setSelectedGemach] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddingToSupabase, setIsAddingToSupabase] = useState(false);
 
   // Load gemachs from Supabase
   useEffect(() => {
@@ -110,13 +145,13 @@ const Index = () => {
         if (data && data.length > 0) {
           setGemachs(data);
         } else {
-          // If no gemachs in database, fall back to dummy data
-          setGemachs(dummyGemachs);
+          // If no gemachs in database, show empty state
+          setGemachs([]);
         }
       } catch (error) {
         console.error('Error fetching gemachs:', error);
-        // Fall back to dummy data on error
-        setGemachs(dummyGemachs);
+        // Show empty state on error
+        setGemachs([]);
       } finally {
         setIsLoading(false);
       }
@@ -125,48 +160,47 @@ const Index = () => {
     fetchGemachs();
   }, []);
 
-  // Function to add dummy gemachs to Supabase (for development)
-  const addDummyGemachsToSupabase = async () => {
+  // Function to add the new gemachs to Supabase
+  const addGemachsToSupabase = async () => {
+    if (isAddingToSupabase) return;
+    
     try {
-      // Check if we're already using the dummy data
-      if (gemachs.length === dummyGemachs.length && gemachs[0].id === dummyGemachs[0].id) {
-        // Convert the dummy gemachs to the format expected by Supabase
-        const formattedGemachs = dummyGemachs.map(gemach => ({
-          name: gemach.name,
-          category: gemach.category,
-          neighborhood: gemach.neighborhood,
-          address: gemach.address,
-          phone: gemach.phone,
-          hours: gemach.hours,
-          description: gemach.description,
-          image_url: gemach.image,
-          owner_id: user?.id || null,
-          is_approved: true,
-          created_at: new Date().toISOString(),
-        }));
-
-        const { data, error } = await supabase
-          .from('gemachs')
-          .insert(formattedGemachs)
-          .select();
-
-        if (error) {
-          throw error;
-        }
-
-        toast({
-          title: "הגמ\"חים נוספו בהצלחה",
-          description: `${formattedGemachs.length} גמ\"חים נוספו למסד הנתונים`,
-        });
-
-        // Refresh the page to show the new gemachs from Supabase
-        window.location.reload();
-      } else {
-        toast({
-          title: "הגמ\"חים כבר קיימים במערכת",
-          description: "נראה שהגמ\"חים כבר נוספו למסד הנתונים",
-        });
+      setIsAddingToSupabase(true);
+      
+      // First clear any existing gemachs to avoid duplicates
+      const { error: deleteError } = await supabase
+        .from('gemachs')
+        .delete()
+        .not('id', 'is', null); // Delete all records
+      
+      if (deleteError) {
+        throw deleteError;
       }
+      
+      // Add new gemachs with complete data
+      const formattedGemachs = newGemachs.map(gemach => ({
+        ...gemach,
+        owner_id: user?.id || null,
+        is_approved: true,
+        created_at: new Date().toISOString(),
+      }));
+
+      const { data, error } = await supabase
+        .from('gemachs')
+        .insert(formattedGemachs)
+        .select();
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "הגמ\"חים נוספו בהצלחה",
+        description: `${formattedGemachs.length} גמ\"חים נוספו למסד הנתונים`,
+      });
+
+      // Refresh the page to show the new gemachs
+      window.location.reload();
     } catch (error: any) {
       console.error('Error adding gemachs to Supabase:', error);
       toast({
@@ -174,6 +208,8 @@ const Index = () => {
         description: error.message || "אירעה שגיאה בהוספת הגמ\"חים למסד הנתונים",
         variant: "destructive",
       });
+    } finally {
+      setIsAddingToSupabase(false);
     }
   };
 
@@ -280,9 +316,17 @@ const Index = () => {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={addDummyGemachsToSupabase}
+                  onClick={addGemachsToSupabase}
+                  disabled={isAddingToSupabase}
                 >
-                  הוסף גמ״חים לדוגמה לסופבייס
+                  {isAddingToSupabase ? (
+                    <>
+                      <Loader2 className="h-4 w-4 ml-2 animate-spin" />
+                      מוסיף גמ״חים...
+                    </>
+                  ) : (
+                    "הוסף 10 גמ״חים לדוגמה"
+                  )}
                 </Button>
               )}
             </div>
@@ -303,7 +347,7 @@ const Index = () => {
                     >
                       <div className="relative h-48 overflow-hidden">
                         <img 
-                          src={gemach.image_url || gemach.image} 
+                          src={gemach.image_url} 
                           alt={gemach.name} 
                           className="w-full h-full object-cover"
                         />
@@ -328,7 +372,12 @@ const Index = () => {
                   ))
                 ) : (
                   <div className="col-span-full py-10 text-center text-gray-500">
-                    לא נמצאו גמ״חים התואמים את החיפוש
+                    לא נמצאו גמ״חים התואמים את החיפוש. 
+                    {user && (
+                      <p className="mt-2">
+                        לחץ על כפתור "הוסף 10 גמ״חים לדוגמה" כדי להוסיף נתונים לדוגמה.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -346,7 +395,7 @@ const Index = () => {
             <>
               <div className="relative h-52 overflow-hidden">
                 <img 
-                  src={selectedGemach.image_url || selectedGemach.image} 
+                  src={selectedGemach.image_url} 
                   alt={selectedGemach.name} 
                   className="w-full h-full object-cover"
                 />
