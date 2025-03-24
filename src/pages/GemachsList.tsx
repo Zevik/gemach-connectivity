@@ -54,8 +54,8 @@ const dummyGemachs = [
 
 const GemachsList = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [gemachs, setGemachs] = useState(dummyGemachs);
 
   // פונקציה לסינון התוצאות
@@ -64,10 +64,10 @@ const GemachsList = () => {
       gemach.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       gemach.description.toLowerCase().includes(searchTerm.toLowerCase());
       
-    const matchesNeighborhood = selectedNeighborhood === '' || 
+    const matchesNeighborhood = selectedNeighborhood === 'all' || 
       gemach.neighborhood === selectedNeighborhood;
       
-    const matchesCategory = selectedCategory === '' || 
+    const matchesCategory = selectedCategory === 'all' || 
       gemach.category === selectedCategory;
       
     return matchesSearch && matchesNeighborhood && matchesCategory;
@@ -97,7 +97,7 @@ const GemachsList = () => {
                 <SelectValue placeholder="כל השכונות" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">כל השכונות</SelectItem>
+                <SelectItem value="all">כל השכונות</SelectItem>
                 {neighborhoods.map((neighborhood) => (
                   <SelectItem key={neighborhood} value={neighborhood}>
                     {neighborhood}
@@ -114,7 +114,7 @@ const GemachsList = () => {
                 <SelectValue placeholder="כל הקטגוריות" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">כל הקטגוריות</SelectItem>
+                <SelectItem value="all">כל הקטגוריות</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category} value={category}>
                     {category}
