@@ -50,7 +50,7 @@ const RegisterGemach = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [hasFee, setHasFee] = useState(false);
-  
+
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -107,7 +107,7 @@ const RegisterGemach = () => {
       if (!response.ok) {
         throw new Error('Failed to register gemach');
       }
-
+      
       toast({
         title: "הגמ״ח נרשם בהצלחה!",
         description: "תודה שבחרת להרשם במרכז הגמ״חים. הפרטים יועברו לצוות לבדיקה.",
@@ -166,38 +166,38 @@ const RegisterGemach = () => {
                   קטגוריה
                 </label>
                 <Select onValueChange={(value) => setValue('category', value)}>
-                  <SelectTrigger>
+                      <SelectTrigger>
                     <SelectValue placeholder="בחר קטגוריה" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 {errors.category && (
                   <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>
-                )}
-              </div>
-
-              <div>
+              )}
+            </div>
+            
+            <div>
                 <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700 mb-1">
                   שכונה
                 </label>
                 <Select onValueChange={(value) => setValue('neighborhood', value)}>
-                  <SelectTrigger>
+                        <SelectTrigger>
                     <SelectValue placeholder="בחר שכונה" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {neighborhoods.map((neighborhood) => (
-                      <SelectItem key={neighborhood} value={neighborhood}>
-                        {neighborhood}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                        </SelectTrigger>
+                      <SelectContent>
+                        {neighborhoods.map((neighborhood) => (
+                          <SelectItem key={neighborhood} value={neighborhood}>
+                            {neighborhood}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                 {errors.neighborhood && (
                   <p className="text-red-500 text-sm mt-1">{errors.neighborhood.message}</p>
                 )}
@@ -252,10 +252,10 @@ const RegisterGemach = () => {
                   type="tel"
                   placeholder="050-123-4567"
                   {...register('alternative_phone')}
-                />
-              </div>
-
-              <div>
+              />
+            </div>
+            
+            <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                   אימייל (אופציונלי)
                 </label>
@@ -328,8 +328,8 @@ const RegisterGemach = () => {
                     />
                   </div>
                 )}
-              </div>
-
+            </div>
+            
               {/* Website and Social Media */}
               <div>
                 <label htmlFor="website_url" className="block text-sm font-medium text-gray-700 mb-1">
@@ -365,27 +365,27 @@ const RegisterGemach = () => {
                 <label htmlFor="image" className="block text-sm font-medium text-gray-700 mb-1">
                   תמונה (אופציונלי)
                 </label>
-                <Input
+                    <Input 
                   id="image"
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleFileChange}
-                />
-              </div>
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileChange}
+                              />
+                            </div>
 
               <div className="flex justify-center pt-4">
-                <Button 
-                  type="submit"
+            <Button 
+              type="submit" 
                   className="w-full md:w-auto px-8"
-                  disabled={isSubmitting}
-                >
+              disabled={isSubmitting}
+            >
                   {isSubmitting ? 'שולח...' : 'רישום הגמ״ח'}
-                </Button>
+            </Button>
               </div>
-            </form>
+          </form>
           </div>
-        </div>
+      </div>
       </main>
       
       <Footer />

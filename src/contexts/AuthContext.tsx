@@ -2,7 +2,6 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
 
 // User types
 export interface User {
@@ -106,39 +105,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
 
-      // Check if the user is an admin
-      let isAdmin = false;
-
-      if (data.user) {
-        // Special check for admin email
-        if (data.user.email === 'zaviner@gmail.com') {
-          isAdmin = true;
-        } else {
-          // Get the profile to check admin status
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('is_admin')
-            .eq('id', data.user.id)
-            .single();
-
-          isAdmin = !!profileData?.is_admin;
-        }
-      }
-
-      // Save user data and admin status to local storage
-      if (data.user) {
-        localStorage.setItem('user', JSON.stringify({
-          ...data.user,
-          isAdmin
-        }));
-      }
-
-      setUser(data.user ? { ...data.user, isAdmin } : null);
+      const user = data.user;
       
-      // Redirect to index page after login instead of home
+      // Check if the user is an admin (using the specific admin email)
+      const isAdmin = user?.email === 'zaviner@gmail.com';
+      
+      // Save user info to localStorage
+      localStorage.setItem('user', JSON.stringify({
+        id: user?.id,
+        email: user?.email,
+        isAdmin,
+      }));
+      
+      setUser({
+        id: user?.id || '',
+        email: user?.email || '',
+        isAdmin,
+      });
+      
+      // Redirect to home page instead of dashboard
       navigate('/');
+      
+      return user;
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Error logging in:', error.message);
       throw error;
     } finally {
       setLoading(false);
@@ -162,42 +152,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (email: string, password: string, name: string) => {
-    setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      setLoading(true);
+      
+      // Register with Supabase
+      const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            name: name,
+            is_admin: email.toLowerCase() === 'zaviner@gmail.com',
+          },
+        },
       });
-
-      if (error) throw error;
-
-      // Check if the user is an admin
-      const isAdminUser = email === 'zaviner@gmail.com';
-
-      // Create profile for the new user
-      if (data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            email: data.user.email,
-            is_admin: isAdminUser
-          });
-
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-        }
-      }
-
-      toast({
-        title: "הרשמה בוצעה בהצלחה!",
-        description: "נשלח אימייל אימות, אנא אשר אותו לפני ההתחברות.",
-      });
-
-      // After successful registration, redirect to login
-      navigate('/auth');
       
-    } catch (error: any) {
+      if (error) throw error;
+      
+    } catch (error) {
       console.error('Registration error:', error);
       throw error;
     } finally {

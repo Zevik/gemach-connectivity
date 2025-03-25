@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -37,11 +36,7 @@ const RegistrationSuccess = () => {
       
       <div className="flex gap-4">
         <Button asChild variant="default">
-          <Link to="/dashboard">לוח הבקרה שלי</Link>
-        </Button>
-        
-        <Button asChild variant="outline">
-          <Link to="/gemachs">חזרה לרשימת הגמ״חים</Link>
+          <Link to="/">חזרה לדף הראשי</Link>
         </Button>
       </div>
     </div>
