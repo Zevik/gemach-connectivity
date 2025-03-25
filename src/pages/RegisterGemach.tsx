@@ -87,11 +87,12 @@ const RegisterGemach = () => {
     try {
       // העלאת התמונה לאחסון של Supabase
       let imageUrl = null;
+      let filePath = null;
       if (selectedFiles.length > 0) {
         const file = selectedFiles[0];
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-        const filePath = `gemach_images/${fileName}`;
+        filePath = `gemach_images/${fileName}`;
         
         const { error: uploadError, data: uploadData } = await supabase.storage
           .from('images')
@@ -109,7 +110,8 @@ const RegisterGemach = () => {
         }
       }
       
-      // הכנת נתוני הגמ"ח לשמירה בבסיס הנתונים
+      // יצירת אובייקט שמותאם בדיוק לשמות השדות בטבלה - חשוב!
+      // שימוש באובייקט בייצור ידני ולא הסתמכות על אובייקט data
       const gemachData = {
         name: data.name,
         category: data.category,
@@ -117,7 +119,7 @@ const RegisterGemach = () => {
         address: data.address,
         location_instructions: data.location_instructions || null,
         phone: data.phone,
-        alternative_phone: data.alternative_phone || null,
+        manager_phone: data.alternative_phone || null, // שינוי מ-alternative_phone
         email: data.email || null,
         description: data.description,
         hours: data.hours,
@@ -125,21 +127,46 @@ const RegisterGemach = () => {
         fee_details: data.fee_details || null,
         website_url: data.website_url || null,
         facebook_url: data.facebook_url || null,
-        image_url: imageUrl,
-        owner_id: user.id,
-        owner_email: user.email,
-        is_approved: null, // ממתין לאישור מנהל
-        created_at: new Date().toISOString()
+        owner_id: user.id
+        // הושמטו השדות image_url ו-owner_email שלא קיימים בטבלה
       };
 
-      // שמירת הגמ"ח בבסיס הנתונים
-      const { error: insertError } = await supabase
+      console.log("Inserting gemach data:", gemachData);
+
+      // חשוב - שימוש באובייקט שיצרנו ושמותאם בדיוק לטבלה
+      const { data: insertedGemach, error: insertError } = await supabase
         .from('gemachs')
-        .insert([gemachData]);
+        .insert([gemachData])
+        .select('id')
+        .single();
 
       if (insertError) {
         console.error('Database insert error:', insertError);
+        console.log('Full insert error:', JSON.stringify(insertError));
         throw new Error('Failed to register gemach in database');
+      }
+
+      // בהנחה שה-insert החזיר את ה-ID של הגמ"ח שנוצר
+      const gemachId = insertedGemach?.id;
+
+      if (!gemachId) {
+        throw new Error('Failed to get gemach ID from registration');
+      }
+      
+      // אם יש תמונה, צריך לשמור אותה בטבלת gemach_images
+      if (imageUrl && filePath) {
+        const { error: imageInsertError } = await supabase
+          .from('gemach_images')
+          .insert([{
+            gemach_id: gemachId,
+            storage_path: filePath,
+            is_primary: true
+          }]);
+        
+        if (imageInsertError) {
+          console.error('Image reference insert error:', imageInsertError);
+          // לא נזרוק שגיאה כאן כדי שהגמ״ח עדיין יירשם גם אם יש בעיה עם התמונה
+        }
       }
       
       toast({
