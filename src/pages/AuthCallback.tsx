@@ -26,7 +26,14 @@ const AuthCallback = () => {
             isAdmin
           };
           
+          // שמירה בלוקל סטורג' כדי לשמור על ההתחברות גם אחרי רענון
           localStorage.setItem('user', JSON.stringify(userData));
+          
+          // הגדרת הסשן עם פרסיסטנטיות
+          await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token
+          });
           
           navigate('/dashboard');
         } else {

@@ -94,14 +94,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
         if (session) {
           await handleSession(session);
         } else {
-          // רק אם אין משתמש בלוקל סטורג', נאפס את המשתמש הנוכחי
-          const storedUser = localStorage.getItem('user');
-          if (!storedUser) {
+          // האירוע 'SIGNED_OUT' צריך לנקות את כל הנתונים
+          if (event === 'SIGNED_OUT') {
+            localStorage.removeItem('user');
             setUser(null);
+          } else {
+            // לאירועים אחרים, רק אם אין משתמש בלוקל סטורג', נאפס את המשתמש הנוכחי
+            const storedUser = localStorage.getItem('user');
+            if (!storedUser) {
+              setUser(null);
+            }
           }
         }
         setLoading(false);
@@ -229,6 +235,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       await supabase.auth.signOut();
+      // נקה את המידע גם מהלוקל סטורג'
+      localStorage.removeItem('user');
+      // נקה את המידע מהמצב של הקומפוננטה
       setUser(null);
       navigate('/');
     } catch (error) {
