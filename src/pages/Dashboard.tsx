@@ -79,7 +79,8 @@ const Dashboard = () => {
         const { data, error } = await supabase
           .from('gemachs')
           .select('*')
-          .eq('owner_id', user.id);
+          .eq('owner_id', user.id)
+          .is('is_deleted', null);
 
         if (error) throw error;
 
@@ -124,6 +125,7 @@ const Dashboard = () => {
         const { data: gemachsData, error: gemachsError } = await supabase
           .from('gemachs')
           .select('*')
+          .is('is_deleted', null)
           .or('is_approved.is.null,is_approved.eq.false');
 
         if (gemachsError) throw gemachsError;
@@ -244,9 +246,14 @@ const Dashboard = () => {
   const handleDelete = async (id: string) => {
     try {
       setIsProcessing(true);
+
+      // במקום למחוק, נעדכן ל-soft delete
       const { error } = await supabase
         .from('gemachs')
-        .delete()
+        .update({
+          is_deleted: true,
+          deleted_at: new Date().toISOString()
+        })
         .eq('id', id);
 
       if (error) throw error;
@@ -753,6 +760,132 @@ const Dashboard = () => {
                                   </div>
                                 </CardContent>
                                 <CardFooter className="flex justify-end gap-2 p-4 pt-0">
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        onClick={() => setEditGemach({
+                                          id: gemach.id,
+                                          name: gemach.name,
+                                          description: gemach.description || '',
+                                          category: gemach.category || '',
+                                          address: gemach.address || '',
+                                          neighborhood: gemach.neighborhood || '',
+                                          phone: gemach.phone || '',
+                                          hours: gemach.hours || '',
+                                          status: gemach.status,
+                                          created_at: gemach.created_at
+                                        })}
+                                      >
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        ערוך
+                                      </Button>
+                                    </DialogTrigger>
+                                    {editGemach && editGemach.id === gemach.id && (
+                                      <DialogContent className="sm:max-w-[550px]">
+                                        <DialogHeader>
+                                          <DialogTitle>עריכת גמ״ח</DialogTitle>
+                                          <DialogDescription>
+                                            ערוך את פרטי הגמ״ח. לחץ על שמור לאישור השינויים.
+                                          </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-4 py-4">
+                                          <div>
+                                            <Label htmlFor="name">שם הגמ״ח</Label>
+                                            <Input 
+                                              id="name" 
+                                              value={editGemach.name} 
+                                              onChange={(e) => setEditGemach({...editGemach, name: e.target.value})} 
+                                            />
+                                          </div>
+                                          <div>
+                                            <Label htmlFor="description">תיאור</Label>
+                                            <Textarea 
+                                              id="description" 
+                                              value={editGemach.description} 
+                                              onChange={(e) => setEditGemach({...editGemach, description: e.target.value})} 
+                                            />
+                                          </div>
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                              <Label htmlFor="category">קטגוריה</Label>
+                                              <Select 
+                                                value={editGemach.category} 
+                                                onValueChange={(value) => setEditGemach({...editGemach, category: value})}
+                                              >
+                                                <SelectTrigger>
+                                                  <SelectValue placeholder="בחר קטגוריה" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  {categories.map((category) => (
+                                                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
+                                            </div>
+                                            <div>
+                                              <Label htmlFor="neighborhood">שכונה</Label>
+                                              <Select 
+                                                value={editGemach.neighborhood} 
+                                                onValueChange={(value) => setEditGemach({...editGemach, neighborhood: value})}
+                                              >
+                                                <SelectTrigger>
+                                                  <SelectValue placeholder="בחר שכונה" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  {neighborhoods.map((neighborhood) => (
+                                                    <SelectItem key={neighborhood} value={neighborhood}>{neighborhood}</SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <Label htmlFor="address">כתובת</Label>
+                                            <Input 
+                                              id="address" 
+                                              value={editGemach.address} 
+                                              onChange={(e) => setEditGemach({...editGemach, address: e.target.value})} 
+                                            />
+                                          </div>
+                                          <div>
+                                            <Label htmlFor="phone">טלפון</Label>
+                                            <Input 
+                                              id="phone" 
+                                              value={editGemach.phone} 
+                                              onChange={(e) => setEditGemach({...editGemach, phone: e.target.value})} 
+                                            />
+                                          </div>
+                                          <div>
+                                            <Label htmlFor="hours">שעות פעילות</Label>
+                                            <Input 
+                                              id="hours" 
+                                              value={editGemach.hours} 
+                                              onChange={(e) => setEditGemach({...editGemach, hours: e.target.value})} 
+                                            />
+                                          </div>
+                                        </div>
+                                        <DialogFooter>
+                                          <Button 
+                                            variant="outline" 
+                                            onClick={() => setEditGemach(null)}
+                                            disabled={isProcessing}
+                                          >
+                                            ביטול
+                                          </Button>
+                                          <Button 
+                                            onClick={() => handleUpdate(editGemach)}
+                                            disabled={isProcessing}
+                                          >
+                                            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                            שמור שינויים
+                                          </Button>
+                                        </DialogFooter>
+                                      </DialogContent>
+                                    )}
+                                  </Dialog>
+                                  
                                   <Button 
                                     variant="outline" 
                                     className="text-red-500"

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MapPin, Phone, Clock, Mail, Globe, Facebook, ChevronLeft, Share2, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { MapPin, Phone, Clock, Mail, Globe, Facebook, ChevronLeft, Share2, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, RefreshCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,6 +33,8 @@ interface Gemach {
   images?: GemachImage[];
   is_approved: boolean | null;
   owner_id: string;
+  is_deleted?: boolean | null;
+  deleted_at?: string | null;
 }
 
 const GemachDetail = () => {
@@ -70,10 +72,11 @@ const GemachDetail = () => {
         }
 
         // בדיקה אם הגמ"ח מאושר לצפייה
-        if (gemachData.is_approved !== true && !isAdmin && user?.id !== gemachData.owner_id) {
+        if ((gemachData.is_approved !== true || gemachData.is_deleted === true) && 
+            !isAdmin && user?.id !== gemachData.owner_id) {
           toast({
             title: "אין גישה לגמ\"ח זה",
-            description: "הגמ\"ח טרם אושר או נדחה על ידי מנהל המערכת",
+            description: "הגמ\"ח טרם אושר, נדחה על ידי מנהל המערכת, או הועבר לסל המחזור",
             variant: "destructive",
           });
           navigate('/gemachs');
@@ -161,7 +164,7 @@ const GemachDetail = () => {
         title: approve ? "הגמ\"ח אושר בהצלחה" : "הגמ\"ח נדחה",
         description: approve 
           ? "הגמ\"ח אושר ויופיע כעת בתוצאות החיפוש" 
-          : "הגמ\"ח נדחה ולא יופיע בתוצאות החיפוש",
+          : "הגמ\"ח נדחה ולא יופיע בתוצאות החיפוש הציבוריות",
       });
     } catch (error) {
       console.error('Error updating gemach approval:', error);
@@ -169,6 +172,81 @@ const GemachDetail = () => {
         variant: "destructive",
         title: "שגיאה בעדכון סטטוס הגמ\"ח",
         description: "אירעה שגיאה בעדכון סטטוס הגמ\"ח. אנא נסה שוב מאוחר יותר."
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleMoveToTrash = async () => {
+    if (!isAdmin || !gemach) return;
+    
+    if (!confirm("האם אתה בטוח שברצונך להעביר את הגמ\"ח לסל המחזור? ניתן לשחזר אותו מאוחר יותר.")) {
+      return;
+    }
+    
+    try {
+      setIsProcessing(true);
+      const { error } = await supabase
+        .from('gemachs')
+        .update({ 
+          is_deleted: true,
+          deleted_at: new Date().toISOString()
+        })
+        .eq('id', gemach.id);
+
+      if (error) throw error;
+
+      // עדכון הגמ"ח המקומי
+      setGemach(prev => prev ? {...prev, is_deleted: true, deleted_at: new Date().toISOString()} : null);
+
+      toast({
+        title: "הגמ\"ח הועבר לסל מחזור",
+        description: "הגמ\"ח הועבר לסל מחזור וניתן לשחזר אותו מאוחר יותר",
+      });
+      
+      // נווט חזרה לדף הניהול
+      navigate('/admin');
+    } catch (error) {
+      console.error('Error moving gemach to trash:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בהעברת גמ\"ח לסל מחזור",
+        description: "אירעה שגיאה בעת העברת הגמ\"ח לסל מחזור. אנא נסה שוב מאוחר יותר."
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleRestoreGemach = async () => {
+    if (!isAdmin || !gemach) return;
+    
+    try {
+      setIsProcessing(true);
+      const { error } = await supabase
+        .from('gemachs')
+        .update({ 
+          is_deleted: null,
+          deleted_at: null
+        })
+        .eq('id', gemach.id);
+
+      if (error) throw error;
+
+      // עדכון הגמ"ח המקומי
+      setGemach(prev => prev ? {...prev, is_deleted: null, deleted_at: null} : null);
+
+      toast({
+        title: "הגמ\"ח שוחזר בהצלחה",
+        description: "הגמ\"ח הוחזר מסל המחזור למערכת",
+      });
+    } catch (error) {
+      console.error('Error restoring gemach:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בשחזור הגמ\"ח",
+        description: "אירעה שגיאה בעת שחזור הגמ\"ח מסל המחזור. אנא נסה שוב מאוחר יותר."
       });
     } finally {
       setIsProcessing(false);
@@ -231,29 +309,109 @@ const GemachDetail = () => {
               
               {isAdmin && (
                 <div className="mt-3 flex space-x-2">
-                  {gemach.is_approved !== true && (
-                    <Button 
-                      size="sm" 
-                      className="bg-green-600 hover:bg-green-700"
-                      disabled={isProcessing}
-                      onClick={() => handleApproval(true)}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      אשר גמ"ח
-                    </Button>
-                  )}
+                  <Button 
+                    size="sm" 
+                    className="bg-green-600 hover:bg-green-700"
+                    disabled={isProcessing || gemach.is_approved === true}
+                    onClick={() => handleApproval(true)}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    אשר גמ"ח
+                  </Button>
                   
-                  {gemach.is_approved !== false && (
-                    <Button 
-                      size="sm" 
-                      variant="destructive"
-                      disabled={isProcessing}
-                      onClick={() => handleApproval(false)}
-                    >
-                      <XCircle className="h-4 w-4 mr-1" />
-                      דחה גמ"ח
-                    </Button>
-                  )}
+                  <Button 
+                    size="sm" 
+                    variant="destructive"
+                    disabled={isProcessing || gemach.is_approved === false}
+                    onClick={() => handleApproval(false)}
+                  >
+                    <XCircle className="h-4 w-4 mr-1" />
+                    דחה גמ"ח
+                  </Button>
+
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => navigate(`/gemach/${gemach.id}/edit`)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    ערוך גמ"ח
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* תצוגת פעולות מנהל לגמ"ח מאושר */}
+      {isAdmin && gemach.is_approved === true && (
+        <div className="mb-6 p-4 rounded-lg bg-gray-50 border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium">פעולות ניהול</h3>
+              <p className="text-sm text-gray-500">אפשרויות זמינות למנהלי מערכת בלבד</p>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => navigate(`/gemach/${gemach.id}/edit`)}
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                ערוך גמ"ח
+              </Button>
+              
+              <Button 
+                size="sm" 
+                variant="destructive"
+                onClick={handleMoveToTrash}
+                disabled={isProcessing}
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                העבר לסל מחזור
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* הודעת סטטוס לגמ"ח שנמחק */}
+      {gemach.is_deleted === true && (
+        <div className="mb-6 p-4 rounded-lg bg-gray-50 border border-gray-200">
+          <div className="flex items-center">
+            <Trash2 className="h-5 w-5 text-gray-500 mr-2" />
+            <div>
+              <h3 className="font-medium">
+                גמ"ח זה נמצא בסל המחזור
+              </h3>
+              <p className="text-sm mt-1">
+                גמ"ח זה הועבר לסל המחזור ואינו מופיע בתוצאות החיפוש הציבוריות.
+                {gemach.deleted_at && (
+                  <span> תאריך העברה לסל מחזור: {new Date(gemach.deleted_at).toLocaleDateString('he-IL')}</span>
+                )}
+              </p>
+              
+              {isAdmin && (
+                <div className="mt-3 flex space-x-2">
+                  <Button 
+                    size="sm" 
+                    className="bg-blue-600 hover:bg-blue-700"
+                    disabled={isProcessing}
+                    onClick={handleRestoreGemach}
+                  >
+                    <RefreshCcw className="h-4 w-4 mr-1" />
+                    שחזר גמ"ח
+                  </Button>
+                  
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => navigate(`/gemach/${gemach.id}/edit`)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    ערוך גמ"ח
+                  </Button>
                 </div>
               )}
             </div>
