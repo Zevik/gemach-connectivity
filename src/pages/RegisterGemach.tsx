@@ -46,12 +46,12 @@ type FormData = z.infer<typeof formSchema>;
 const RegisterGemach = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [hasFee, setHasFee] = useState(false);
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
@@ -85,6 +85,8 @@ const RegisterGemach = () => {
     setIsSubmitting(true);
     
     try {
+      console.log("User is logged in:", user);
+      
       // העלאת התמונה לאחסון של Supabase
       let imageUrl = null;
       let filePath = null;
@@ -93,6 +95,8 @@ const RegisterGemach = () => {
         const fileExt = file.name.split('.').pop();
         const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
         filePath = `gemach_images/${fileName}`;
+        
+        console.log("Uploading image:", filePath);
         
         const { error: uploadError, data: uploadData } = await supabase.storage
           .from('images')
@@ -107,6 +111,7 @@ const RegisterGemach = () => {
             .getPublicUrl(filePath);
             
           imageUrl = publicUrl;
+          console.log("Image uploaded successfully:", imageUrl);
         }
       }
       
@@ -133,8 +138,8 @@ const RegisterGemach = () => {
 
       console.log("Inserting gemach data:", gemachData);
 
-      // חשוב - שימוש באובייקט שיצרנו ושמותאם בדיוק לטבלה
-      const { data: insertedGemach, error: insertError } = await supabase
+      // שמירת הגמ"ח בבסיס הנתונים
+      const { data: insertData, error: insertError } = await supabase
         .from('gemachs')
         .insert([gemachData])
         .select('id')
@@ -147,7 +152,7 @@ const RegisterGemach = () => {
       }
 
       // בהנחה שה-insert החזיר את ה-ID של הגמ"ח שנוצר
-      const gemachId = insertedGemach?.id;
+      const gemachId = insertData?.id;
 
       if (!gemachId) {
         throw new Error('Failed to get gemach ID from registration');
@@ -168,6 +173,8 @@ const RegisterGemach = () => {
           // לא נזרוק שגיאה כאן כדי שהגמ״ח עדיין יירשם גם אם יש בעיה עם התמונה
         }
       }
+      
+      console.log("Gemach inserted successfully:", insertData);
       
       toast({
         title: "הגמ״ח נרשם בהצלחה!",
@@ -195,7 +202,7 @@ const RegisterGemach = () => {
   };
 
   const handleFeeChange = (checked: boolean) => {
-    setValue('has_fee', checked);
+    form.setValue('has_fee', checked);
     setHasFee(checked);
   };
 
@@ -208,17 +215,17 @@ const RegisterGemach = () => {
           <div className="max-w-2xl mx-auto">
             <h1 className="text-3xl font-bold text-center mb-8">רישום גמ״ח חדש</h1>
             
-            <form onSubmit={handleSubmit(onSubmit)} className="bg-white rounded-lg shadow-sm p-6 space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="bg-white rounded-lg shadow-sm p-6 space-y-6">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                   שם הגמ״ח
                 </label>
                 <Input
                   id="name"
-                  {...register('name')}
+                  {...form.register('name')}
                 />
-                {errors.name && (
-                  <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>
+                {form.formState.errors.name && (
+                  <p className="text-red-500 text-sm mt-1">{form.formState.errors.name.message}</p>
                 )}
               </div>
 
@@ -226,7 +233,7 @@ const RegisterGemach = () => {
                 <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
                   קטגוריה
                 </label>
-                <Select onValueChange={(value) => setValue('category', value)}>
+                <Select onValueChange={(value) => form.setValue('category', value)}>
                       <SelectTrigger>
                     <SelectValue placeholder="בחר קטגוריה" />
                       </SelectTrigger>
@@ -238,8 +245,8 @@ const RegisterGemach = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                {errors.category && (
-                  <p className="text-red-500 text-sm mt-1">{errors.category.message}</p>
+                {form.formState.errors.category && (
+                  <p className="text-red-500 text-sm mt-1">{form.formState.errors.category.message}</p>
               )}
             </div>
             
@@ -247,7 +254,7 @@ const RegisterGemach = () => {
                 <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700 mb-1">
                   שכונה
                 </label>
-                <Select onValueChange={(value) => setValue('neighborhood', value)}>
+                <Select onValueChange={(value) => form.setValue('neighborhood', value)}>
                         <SelectTrigger>
                     <SelectValue placeholder="בחר שכונה" />
                         </SelectTrigger>
@@ -259,8 +266,8 @@ const RegisterGemach = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                {errors.neighborhood && (
-                  <p className="text-red-500 text-sm mt-1">{errors.neighborhood.message}</p>
+                {form.formState.errors.neighborhood && (
+                  <p className="text-red-500 text-sm mt-1">{form.formState.errors.neighborhood.message}</p>
                 )}
               </div>
 
@@ -270,10 +277,10 @@ const RegisterGemach = () => {
                 </label>
                 <Input
                   id="address"
-                  {...register('address')}
+                  {...form.register('address')}
                 />
-                {errors.address && (
-                  <p className="text-red-500 text-sm mt-1">{errors.address.message}</p>
+                {form.formState.errors.address && (
+                  <p className="text-red-500 text-sm mt-1">{form.formState.errors.address.message}</p>
                 )}
               </div>
 
@@ -284,7 +291,7 @@ const RegisterGemach = () => {
                 <Textarea
                   id="location_instructions"
                   placeholder="פרטים נוספים על איך להגיע למקום, סימנים מזהים, קומה, כניסה וכו׳"
-                  {...register('location_instructions')}
+                  {...form.register('location_instructions')}
                   rows={3}
                 />
               </div>
@@ -297,10 +304,10 @@ const RegisterGemach = () => {
                   id="phone"
                   type="tel"
                   placeholder="02-123-4567"
-                  {...register('phone')}
+                  {...form.register('phone')}
                 />
-                {errors.phone && (
-                  <p className="text-red-500 text-sm mt-1">{errors.phone.message}</p>
+                {form.formState.errors.phone && (
+                  <p className="text-red-500 text-sm mt-1">{form.formState.errors.phone.message}</p>
                 )}
               </div>
 
@@ -312,7 +319,7 @@ const RegisterGemach = () => {
                   id="alternative_phone"
                   type="tel"
                   placeholder="050-123-4567"
-                  {...register('alternative_phone')}
+                  {...form.register('alternative_phone')}
               />
             </div>
             
@@ -324,10 +331,10 @@ const RegisterGemach = () => {
                   id="email"
                   type="email"
                   placeholder="your@email.com"
-                  {...register('email')}
+                  {...form.register('email')}
                 />
-                {errors.email && (
-                  <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+                {form.formState.errors.email && (
+                  <p className="text-red-500 text-sm mt-1">{form.formState.errors.email.message}</p>
                 )}
               </div>
 
@@ -338,10 +345,10 @@ const RegisterGemach = () => {
                 <Input
                   id="hours"
                   placeholder="לדוגמה: א'-ה' 9:00-13:00, 16:00-19:00"
-                  {...register('hours')}
+                  {...form.register('hours')}
                 />
-                {errors.hours && (
-                  <p className="text-red-500 text-sm mt-1">{errors.hours.message}</p>
+                {form.formState.errors.hours && (
+                  <p className="text-red-500 text-sm mt-1">{form.formState.errors.hours.message}</p>
                 )}
               </div>
 
@@ -352,11 +359,11 @@ const RegisterGemach = () => {
                 <Textarea
                   id="description"
                   placeholder="פרטו על מטרת הגמ״ח, מה ניתן להשאיל, תנאים מיוחדים וכו׳"
-                  {...register('description')}
+                  {...form.register('description')}
                   rows={4}
                 />
-                {errors.description && (
-                  <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
+                {form.formState.errors.description && (
+                  <p className="text-red-500 text-sm mt-1">{form.formState.errors.description.message}</p>
                 )}
               </div>
 
@@ -384,7 +391,7 @@ const RegisterGemach = () => {
                     <Textarea
                       id="fee_details"
                       placeholder="פרטו את עלות השימוש בגמ״ח ולאן מיועדים הרווחים"
-                      {...register('fee_details')}
+                      {...form.register('fee_details')}
                       rows={3}
                     />
                   </div>
@@ -400,10 +407,10 @@ const RegisterGemach = () => {
                   id="website_url"
                   type="url"
                   placeholder="https://www.example.com"
-                  {...register('website_url')}
+                  {...form.register('website_url')}
                 />
-                {errors.website_url && (
-                  <p className="text-red-500 text-sm mt-1">{errors.website_url.message}</p>
+                {form.formState.errors.website_url && (
+                  <p className="text-red-500 text-sm mt-1">{form.formState.errors.website_url.message}</p>
                 )}
               </div>
 
@@ -415,10 +422,10 @@ const RegisterGemach = () => {
                   id="facebook_url"
                   type="url"
                   placeholder="https://www.facebook.com/yourgmach"
-                  {...register('facebook_url')}
+                  {...form.register('facebook_url')}
                 />
-                {errors.facebook_url && (
-                  <p className="text-red-500 text-sm mt-1">{errors.facebook_url.message}</p>
+                {form.formState.errors.facebook_url && (
+                  <p className="text-red-500 text-sm mt-1">{form.formState.errors.facebook_url.message}</p>
                 )}
               </div>
 
