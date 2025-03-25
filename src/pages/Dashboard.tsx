@@ -124,7 +124,7 @@ const Dashboard = () => {
         const { data: gemachsData, error: gemachsError } = await supabase
           .from('gemachs')
           .select('*')
-          .is('is_approved', null);
+          .or('is_approved.is.null,is_approved.eq.false');
 
         if (gemachsError) throw gemachsError;
 
@@ -140,7 +140,7 @@ const Dashboard = () => {
           hours: item.hours,
           image_url: item.image_url,
           user_email: item.owner_email || "לא ידוע", // אנחנו לא צריכים את profiles
-          status: 'pending',
+          status: item.is_approved === false ? 'rejected' : 'pending',
           created_at: new Date(item.created_at).toLocaleDateString('he-IL')
         })) || [];
 
@@ -714,13 +714,17 @@ const Dashboard = () => {
                                 <CardContent className="p-4">
                                   <div className="flex justify-between items-start mb-3">
                                     <div>
-                                      <h3 className="font-medium text-lg">{gemach.name}</h3>
+                                      <h3 className="font-medium text-lg cursor-pointer hover:text-blue-600" onClick={() => navigate(`/gemach/${gemach.id}`)}>{gemach.name}</h3>
                                       <p className="text-sm text-gray-500">
                                         נשלח על ידי: {gemach.user_email || 'משתמש'} | נוצר: {gemach.created_at}
                                       </p>
                                     </div>
-                                    <span className="px-3 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
-                                      ממתין לאישור
+                                    <span className={`px-3 py-1 rounded-full text-xs ${
+                                      gemach.status === 'pending' 
+                                        ? 'bg-yellow-100 text-yellow-800' 
+                                        : 'bg-red-100 text-red-800'
+                                    }`}>
+                                      {gemach.status === 'pending' ? 'ממתין לאישור' : 'נדחה'}
                                     </span>
                                   </div>
                                   

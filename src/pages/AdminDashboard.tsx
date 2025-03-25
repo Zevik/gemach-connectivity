@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -56,8 +55,9 @@ const AdminDashboard = () => {
       setIsLoadingGemachs(true);
       
       const { data, error } = await supabase
-        .from('pending_gemachs')
+        .from('gemachs')
         .select('*')
+        .or('is_approved.is.null,is_approved.eq.false')
         .order('created_at', { ascending: false });
       
       if (error) {
