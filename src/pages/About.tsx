@@ -10,12 +10,12 @@ export default function About() {
       <main className="flex-1 py-12 bg-gray-50">
         <Container className="max-w-4xl">
           <div className="text-right">
-            <h1 className="text-3xl font-bold mb-8 text-sky-700">אודות גמ״ח קונקטיביטי</h1>
+            <h1 className="text-3xl font-bold mb-8 text-sky-700">אודות מרכז הגמ״חים של ירושלים</h1>
             
             <section className="mb-10">
               <h2 className="text-2xl font-bold mb-4 text-sky-600">המשימה שלנו</h2>
               <p className="mb-4 text-lg leading-relaxed">
-                גמ״ח קונקטיביטי הוקם במטרה לחבר בין אנשים הזקוקים לשירותי גמ״ח (גמילות חסדים) לבין מפעילי הגמ״חים בירושלים וסביבותיה. 
+                מרכז הגמ״חים של ירושלים הוקם במטרה לחבר בין אנשים הזקוקים לשירותי גמ״ח (גמילות חסדים) לבין מפעילי הגמ״חים בירושלים וסביבותיה. 
                 אנו מאמינים שבעזרת טכנולוגיה מודרנית ניתן להנגיש את שירותי הגמ״חים לכל דורש ולהקל על מציאת הגמ״ח המתאים במהירות וביעילות.
               </p>
               <p className="text-lg leading-relaxed">
@@ -24,7 +24,7 @@ export default function About() {
             </section>
             
             <section className="mb-10">
-              <h2 className="text-2xl font-bold mb-4 text-sky-600">למה גמ״ח קונקטיביטי?</h2>
+              <h2 className="text-2xl font-bold mb-4 text-sky-600">למה מרכז הגמ״חים של ירושלים?</h2>
               <ul className="space-y-3 text-lg">
                 <li className="flex items-start">
                   <span className="inline-block ml-2 mt-1 text-sky-500 font-bold">•</span>
@@ -64,7 +64,7 @@ export default function About() {
               </p>
               <p className="text-lg">
                 <strong className="ml-2">מייל:</strong> 
-                <a href="mailto:info@gemach-connectivity.co.il" className="text-sky-600 hover:underline">info@gemach-connectivity.co.il</a>
+                <a href="mailto:contact@gemachim.netlify.app" className="text-sky-600 hover:underline">contact@gemachim.netlify.app</a>
               </p>
               <p className="text-lg">
                 <strong className="ml-2">טלפון:</strong> 02-123-4567
