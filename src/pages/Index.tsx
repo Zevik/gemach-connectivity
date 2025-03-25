@@ -31,7 +31,6 @@ const Index = () => {
         .from('gemachs')
         .select('*')
         .eq('is_approved', true)
-        .is('is_deleted', null)
         .order('created_at', { ascending: false });
       
       if (error) {

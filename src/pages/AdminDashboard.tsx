@@ -50,7 +50,6 @@ const AdminDashboard = () => {
         if (data) {
           fetchPendingGemachs();
           fetchApprovedGemachs();
-          fetchDeletedGemachs();
         }
       } catch (error) {
         console.error('Error checking admin status:', error);
@@ -67,7 +66,6 @@ const AdminDashboard = () => {
       const { data, error } = await supabase
         .from('gemachs')
         .select('*')
-        .is('is_deleted', null)
         .or('is_approved.is.null,is_approved.eq.false')
         .order('created_at', { ascending: false });
       
@@ -97,7 +95,6 @@ const AdminDashboard = () => {
         .from('gemachs')
         .select('*')
         .eq('is_approved', true)
-        .is('is_deleted', null)
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -115,34 +112,6 @@ const AdminDashboard = () => {
       console.error('Error fetching approved gemachs:', error);
     } finally {
       setIsLoadingApproved(false);
-    }
-  };
-
-  const fetchDeletedGemachs = async () => {
-    try {
-      setIsLoadingDeleted(true);
-      
-      const { data, error } = await supabase
-        .from('gemachs')
-        .select('*')
-        .eq('is_deleted', true)
-        .order('deleted_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching deleted gemachs:', error);
-        toast({
-          title: "שגיאה בטעינת נתונים",
-          description: "לא ניתן לטעון את רשימת הגמ\"חים שנמחקו",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      setDeletedGemachs(data || []);
-    } catch (error) {
-      console.error('Error fetching deleted gemachs:', error);
-    } finally {
-      setIsLoadingDeleted(false);
     }
   };
 
@@ -176,76 +145,7 @@ const AdminDashboard = () => {
   };
 
   const softDeleteGemach = async (id: string) => {
-    if (!confirm("האם אתה בטוח שברצונך להעביר את הגמ\"ח לסל המחזור? ניתן לשחזר אותו מאוחר יותר.")) {
-      return;
-    }
-    
-    try {
-      const { error } = await supabase
-        .from('gemachs')
-        .update({ 
-          is_deleted: true,
-          deleted_at: new Date().toISOString()
-        })
-        .eq('id', id);
-      
-      if (error) {
-        console.error('Error soft deleting gemach:', error);
-        toast({
-          title: "שגיאה בהעברה לסל המחזור",
-          description: "לא ניתן להעביר את הגמ\"ח לסל המחזור. נסה שוב מאוחר יותר",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      toast({
-        title: "הגמ\"ח הועבר לסל המחזור",
-        description: "הגמ\"ח הועבר לסל המחזור בהצלחה",
-      });
-      
-      fetchPendingGemachs();
-      fetchApprovedGemachs();
-      fetchDeletedGemachs();
-    } catch (error) {
-      console.error('Error soft deleting gemach:', error);
-    }
-  };
-
-  const restoreGemach = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('gemachs')
-        .update({ 
-          is_deleted: null,
-          deleted_at: null
-        })
-        .eq('id', id);
-      
-      if (error) {
-        console.error('Error restoring gemach:', error);
-        toast({
-          title: "שגיאה בשחזור הגמ\"ח",
-          description: "לא ניתן לשחזר את הגמ\"ח. נסה שוב מאוחר יותר",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      toast({
-        title: "הגמ\"ח שוחזר בהצלחה",
-        description: "הגמ\"ח הוחזר למערכת בהצלחה",
-      });
-      
-      fetchApprovedGemachs();
-      fetchDeletedGemachs();
-    } catch (error) {
-      console.error('Error restoring gemach:', error);
-    }
-  };
-
-  const permanentDeleteGemach = async (id: string) => {
-    if (!confirm("האם אתה בטוח שברצונך למחוק לצמיתות את הגמ\"ח? פעולה זו אינה ניתנת לביטול.")) {
+    if (!confirm("האם אתה בטוח שברצונך למחוק את הגמ\"ח הזה? פעולה זו אינה ניתנת לביטול.")) {
       return;
     }
     
@@ -256,22 +156,23 @@ const AdminDashboard = () => {
         .eq('id', id);
       
       if (error) {
-        console.error('Error permanently deleting gemach:', error);
+        console.error('Error soft deleting gemach:', error);
         toast({
           title: "שגיאה במחיקת הגמ\"ח",
-          description: "לא ניתן למחוק לצמיתות את הגמ\"ח. נסה שוב מאוחר יותר",
+          description: "לא ניתן למחוק את הגמ\"ח. נסה שוב מאוחר יותר",
           variant: "destructive",
         });
         return;
       }
       
       toast({
-        title: "הגמ\"ח נמחק לצמיתות",
+        title: "הגמ\"ח נמחק בהצלחה",
       });
       
-      fetchDeletedGemachs();
+      fetchPendingGemachs();
+      fetchApprovedGemachs();
     } catch (error) {
-      console.error('Error permanently deleting gemach:', error);
+      console.error('Error soft deleting gemach:', error);
     }
   };
 
@@ -311,7 +212,6 @@ const AdminDashboard = () => {
         <TabsList className="mb-8">
           <TabsTrigger value="pending">ממתינים לאישור</TabsTrigger>
           <TabsTrigger value="approved">גמ"חים מאושרים</TabsTrigger>
-          <TabsTrigger value="deleted">סל מחזור</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pending">
@@ -445,76 +345,6 @@ const AdminDashboard = () => {
                                 variant="destructive" 
                                 size="sm"
                                 onClick={() => softDeleteGemach(gemach.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="deleted">
-          <Card>
-            <CardHeader>
-              <CardTitle>סל מחזור</CardTitle>
-              <CardDescription>גמ"חים שהועברו לסל המחזור - ניתן לשחזר או למחוק לצמיתות</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingDeleted ? (
-                <div className="flex justify-center py-8">
-                  <div className="w-12 h-12 border-t-4 border-primary border-solid rounded-full animate-spin"></div>
-                </div>
-              ) : deletedGemachs.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <p>אין גמ&quot;חים בסל המחזור</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>שם הגמ&quot;ח</TableHead>
-                        <TableHead>קטגוריה</TableHead>
-                        <TableHead>יוצר</TableHead>
-                        <TableHead>תאריך מחיקה</TableHead>
-                        <TableHead>פעולות</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {deletedGemachs.map((gemach) => (
-                        <TableRow key={gemach.id} className="opacity-70">
-                          <TableCell className="font-medium">{gemach.name}</TableCell>
-                          <TableCell>{gemach.category}</TableCell>
-                          <TableCell>{gemach.owner_email || 'לא ידוע'}</TableCell>
-                          <TableCell>{gemach.deleted_at ? new Date(gemach.deleted_at).toLocaleDateString('he-IL') : 'לא ידוע'}</TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => navigate(`/gemach/${gemach.id}`)}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="default" 
-                                size="sm" 
-                                className="bg-blue-600 hover:bg-blue-700"
-                                onClick={() => restoreGemach(gemach.id)}
-                              >
-                                <RefreshCcw className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="destructive" 
-                                size="sm"
-                                onClick={() => permanentDeleteGemach(gemach.id)}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>

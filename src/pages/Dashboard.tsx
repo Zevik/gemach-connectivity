@@ -79,8 +79,7 @@ const Dashboard = () => {
         const { data, error } = await supabase
           .from('gemachs')
           .select('*')
-          .eq('owner_id', user.id)
-          .is('is_deleted', null);
+          .eq('owner_id', user.id);
 
         if (error) throw error;
 
@@ -125,7 +124,6 @@ const Dashboard = () => {
         const { data: gemachsData, error: gemachsError } = await supabase
           .from('gemachs')
           .select('*')
-          .is('is_deleted', null)
           .or('is_approved.is.null,is_approved.eq.false');
 
         if (gemachsError) throw gemachsError;
@@ -247,13 +245,10 @@ const Dashboard = () => {
     try {
       setIsProcessing(true);
 
-      // במקום למחוק, נעדכן ל-soft delete
+      // במקום למחוק, נעדכן ל-soft delete - מושבת זמנית עד לעדכון סכימת מסד הנתונים
       const { error } = await supabase
         .from('gemachs')
-        .update({
-          is_deleted: true,
-          deleted_at: new Date().toISOString()
-        })
+        .delete()
         .eq('id', id);
 
       if (error) throw error;
