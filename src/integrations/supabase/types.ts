@@ -1,4 +1,3 @@
-// This file is auto-generated from Supabase
 export type Json =
   | string
   | number
@@ -7,9 +6,48 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
+      gemach_images: {
+        Row: {
+          created_at: string | null
+          gemach_id: string | null
+          id: string
+          is_primary: boolean | null
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string | null
+          gemach_id?: string | null
+          id?: string
+          is_primary?: boolean | null
+          storage_path: string
+        }
+        Update: {
+          created_at?: string | null
+          gemach_id?: string | null
+          id?: string
+          is_primary?: boolean | null
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gemach_images_gemach_id_fkey"
+            columns: ["gemach_id"]
+            isOneToOne: false
+            referencedRelation: "gemachs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gemach_images_gemach_id_fkey"
+            columns: ["gemach_id"]
+            isOneToOne: false
+            referencedRelation: "pending_gemachs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gemachs: {
         Row: {
           address: string
@@ -87,45 +125,6 @@ export interface Database {
           website_url?: string | null
         }
         Relationships: []
-      }
-      gemach_images: {
-        Row: {
-          created_at: string | null
-          gemach_id: string | null
-          id: string
-          is_primary: boolean | null
-          storage_path: string
-        }
-        Insert: {
-          created_at?: string | null
-          gemach_id?: string | null
-          id?: string
-          is_primary?: boolean | null
-          storage_path: string
-        }
-        Update: {
-          created_at?: string | null
-          gemach_id?: string | null
-          id?: string
-          is_primary?: boolean | null
-          storage_path?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "gemach_images_gemach_id_fkey"
-            columns: ["gemach_id"]
-            isOneToOne: false
-            referencedRelation: "gemachs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "gemach_images_gemach_id_fkey"
-            columns: ["gemach_id"]
-            isOneToOne: false
-            referencedRelation: "pending_gemachs"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       profiles: {
         Row: {
@@ -236,6 +235,12 @@ export interface Database {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      register_gemach: {
+        Args: {
+          gemach_details: Json
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
@@ -326,4 +331,19 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
