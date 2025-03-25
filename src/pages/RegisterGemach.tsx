@@ -85,27 +85,61 @@ const RegisterGemach = () => {
     setIsSubmitting(true);
     
     try {
-      const formDataToSend = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        if (value !== null) {
-          formDataToSend.append(key, value);
-        }
-      });
-
-      // Add images
+      // העלאת התמונה לאחסון של Supabase
+      let imageUrl = null;
       if (selectedFiles.length > 0) {
-        selectedFiles.forEach((file, index) => {
-          formDataToSend.append(`images`, file);
-        });
+        const file = selectedFiles[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `gemach_images/${fileName}`;
+        
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from('images')
+          .upload(filePath, file);
+          
+        if (uploadError) {
+          console.error('Image upload error:', uploadError);
+        } else if (uploadData) {
+          // יצירת URL ציבורי לתמונה
+          const { data: { publicUrl } } = supabase.storage
+            .from('images')
+            .getPublicUrl(filePath);
+            
+          imageUrl = publicUrl;
+        }
       }
+      
+      // הכנת נתוני הגמ"ח לשמירה בבסיס הנתונים
+      const gemachData = {
+        name: data.name,
+        category: data.category,
+        neighborhood: data.neighborhood,
+        address: data.address,
+        location_instructions: data.location_instructions || null,
+        phone: data.phone,
+        alternative_phone: data.alternative_phone || null,
+        email: data.email || null,
+        description: data.description,
+        hours: data.hours,
+        has_fee: data.has_fee,
+        fee_details: data.fee_details || null,
+        website_url: data.website_url || null,
+        facebook_url: data.facebook_url || null,
+        image_url: imageUrl,
+        owner_id: user.id,
+        owner_email: user.email,
+        is_approved: null, // ממתין לאישור מנהל
+        created_at: new Date().toISOString()
+      };
 
-      const response = await fetch('/api/gemachs', {
-        method: 'POST',
-        body: formDataToSend
-      });
+      // שמירת הגמ"ח בבסיס הנתונים
+      const { error: insertError } = await supabase
+        .from('gemachs')
+        .insert([gemachData]);
 
-      if (!response.ok) {
-        throw new Error('Failed to register gemach');
+      if (insertError) {
+        console.error('Database insert error:', insertError);
+        throw new Error('Failed to register gemach in database');
       }
       
       toast({
