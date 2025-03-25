@@ -64,7 +64,7 @@ export default function About() {
               </p>
               <p className="text-lg">
                 <strong className="ml-2">מייל:</strong> 
-                <a href="mailto:contact@gemachim.netlify.app" className="text-sky-600 hover:underline">contact@gemachim.netlify.app</a>
+                <a href="mailto:gemachimcenter@gmail.com" className="text-sky-600 hover:underline">gemachimcenter@gmail.com</a>
               </p>
               <p className="text-lg">
                 <strong className="ml-2">טלפון:</strong> 02-123-4567

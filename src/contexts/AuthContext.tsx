@@ -140,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'https://gemachim.netlify.app/auth/callback',
+          redirectTo: `${window.location.origin}/auth/callback`,
         }
       });
 
