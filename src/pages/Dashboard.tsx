@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, UserCircle, LogOut, Package, PlusCircle, Edit, Trash2, Check, X, AlertCircle } from 'lucide-react';
+import { Loader2, UserCircle, LogOut, Package, PlusCircle, Edit, Trash2, Check, X, AlertCircle, Shield, Users } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
@@ -43,6 +43,14 @@ interface PendingGemach extends UserGemach {
   user_email?: string;
 }
 
+interface AdminUser {
+  id: string;
+  email: string;
+  full_name?: string;
+  is_admin: boolean;
+  created_at: string;
+}
+
 const Dashboard = () => {
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -50,9 +58,12 @@ const Dashboard = () => {
   const [pendingGemachs, setPendingGemachs] = useState<PendingGemach[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdminLoading, setIsAdminLoading] = useState(true);
+  const [isUsersLoading, setIsUsersLoading] = useState(true);
   const [editGemach, setEditGemach] = useState<UserGemach | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const { logout } = useAuth();
 
   // טעינת הגמחים של המשתמש
@@ -142,6 +153,39 @@ const Dashboard = () => {
     };
 
     fetchPendingGemachs();
+  }, [user, isAdmin]);
+
+  // טעינת משתמשי מנהל (לאדמין בלבד)
+  useEffect(() => {
+    if (!user || !isAdmin) return;
+
+    const fetchAdminUsers = async () => {
+      try {
+        setIsUsersLoading(true);
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('is_admin', true);
+        
+        if (error) throw error;
+
+        const formattedData = data?.map(item => ({
+          id: item.id,
+          email: item.email,
+          full_name: item.full_name,
+          is_admin: item.is_admin,
+          created_at: new Date(item.created_at).toLocaleDateString('he-IL')
+        })) || [];
+
+        setAdminUsers(formattedData);
+      } catch (error) {
+        console.error('Error fetching admin users:', error);
+      } finally {
+        setIsUsersLoading(false);
+      }
+    };
+
+    fetchAdminUsers();
   }, [user, isAdmin]);
 
   // טיפול בלחיצה על "הוסף גמ״ח חדש"
@@ -260,6 +304,103 @@ const Dashboard = () => {
     }
   };
 
+  // הוספת משתמש מנהל חדש
+  const handleAddAdmin = async () => {
+    if (!newAdminEmail || !newAdminEmail.includes('@')) {
+      toast({
+        variant: "destructive",
+        title: "כתובת אימייל לא תקינה",
+        description: "אנא הכנס כתובת אימייל תקינה",
+      });
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const { data, error } = await supabase.rpc('set_user_admin', {
+        user_email: newAdminEmail,
+        admin_status: true
+      });
+
+      if (error) throw error;
+
+      if (data) {
+        toast({
+          title: "הרשאות מנהל הוקצו בהצלחה",
+          description: `המשתמש ${newAdminEmail} קיבל הרשאות מנהל`,
+        });
+        
+        // רענון רשימת המנהלים
+        const { data: newAdminData, error: fetchError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('email', newAdminEmail)
+          .single();
+        
+        if (!fetchError && newAdminData) {
+          setAdminUsers(prev => [...prev, {
+            id: newAdminData.id,
+            email: newAdminData.email,
+            full_name: newAdminData.full_name,
+            is_admin: newAdminData.is_admin,
+            created_at: new Date(newAdminData.created_at).toLocaleDateString('he-IL')
+          }]);
+        }
+        
+        setNewAdminEmail('');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "לא ניתן להוסיף הרשאות מנהל",
+          description: "המשתמש לא נמצא או שאין לך הרשאות מספיקות",
+        });
+      }
+    } catch (error: any) {
+      console.error('Error adding admin user:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בהוספת מנהל",
+        description: error.message || "אירעה שגיאה בהוספת הרשאות מנהל",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // הסרת הרשאות מנהל
+  const handleRemoveAdmin = async (userId: string, email: string) => {
+    if (!confirm(`האם אתה בטוח שברצונך להסיר הרשאות מנהל מ-${email}?`)) {
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ is_admin: false })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "הרשאות מנהל הוסרו בהצלחה",
+        description: `הרשאות המנהל של ${email} הוסרו`,
+      });
+
+      // עדכון הרשימה
+      setAdminUsers(prev => prev.filter(admin => admin.id !== userId));
+    } catch (error: any) {
+      console.error('Error removing admin user:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בהסרת מנהל",
+        description: error.message || "אירעה שגיאה בהסרת הרשאות מנהל",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // טעינה
   if (isLoading) {
     return (
@@ -314,6 +455,17 @@ const Dashboard = () => {
                       <PlusCircle className="mr-2 h-4 w-4" />
                       הוסף גמ״ח חדש
                     </Button>
+
+                    {isAdmin && (
+                      <Button 
+                        variant="outline" 
+                        className="w-full justify-start"
+                        onClick={() => navigate('/admin')}
+                      >
+                        <Shield className="mr-2 h-4 w-4" />
+                        ניהול מערכת
+                      </Button>
+                    )}
                     
                     <Button 
                       variant="outline" 
@@ -340,6 +492,7 @@ const Dashboard = () => {
                     <TabsList className="mb-6">
                       <TabsTrigger value="my-gemachs">הגמ״חים שלי</TabsTrigger>
                       {isAdmin && <TabsTrigger value="pending">ממתינים לאישור</TabsTrigger>}
+                      {isAdmin && <TabsTrigger value="admins">ניהול מנהלים</TabsTrigger>}
                     </TabsList>
                     
                     <TabsContent value="my-gemachs">
@@ -622,6 +775,73 @@ const Dashboard = () => {
                             <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                             <h3 className="text-lg font-medium mb-2">אין גמ״חים הממתינים לאישור</h3>
                             <p className="text-gray-500">כל הגמ״חים אושרו או נדחו</p>
+                          </div>
+                        )}
+                      </TabsContent>
+                    )}
+
+                    {isAdmin && (
+                      <TabsContent value="admins">
+                        <Card className="mb-4">
+                          <CardHeader>
+                            <CardTitle className="text-lg">הוספת מנהל חדש</CardTitle>
+                            <CardDescription>הוסף משתמש קיים כמנהל מערכת</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex space-x-2">
+                              <Input 
+                                placeholder="הכנס אימייל של משתמש קיים" 
+                                value={newAdminEmail} 
+                                onChange={(e) => setNewAdminEmail(e.target.value)} 
+                                dir="ltr"
+                                className="flex-1"
+                              />
+                              <Button 
+                                onClick={handleAddAdmin} 
+                                disabled={isProcessing || !newAdminEmail}
+                              >
+                                {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                הוסף מנהל
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        <h3 className="font-medium text-lg mb-4">מנהלי מערכת קיימים</h3>
+                        
+                        {isUsersLoading ? (
+                          <div className="flex justify-center items-center py-10">
+                            <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+                            <span className="mr-2">טוען רשימת מנהלים...</span>
+                          </div>
+                        ) : adminUsers.length > 0 ? (
+                          <div className="space-y-2">
+                            {adminUsers.map((admin) => (
+                              <Card key={admin.id}>
+                                <CardContent className="p-4 flex justify-between items-center">
+                                  <div>
+                                    <p className="font-medium">{admin.full_name || 'ללא שם'}</p>
+                                    <p className="text-sm text-gray-500">{admin.email}</p>
+                                    <p className="text-xs text-gray-400">נוצר: {admin.created_at}</p>
+                                  </div>
+                                  <Button 
+                                    variant="outline" 
+                                    className="text-red-500"
+                                    size="sm"
+                                    onClick={() => handleRemoveAdmin(admin.id, admin.email)}
+                                    disabled={isProcessing || admin.email === 'zaviner@gmail.com'} // מונע הסרת המנהל הראשי
+                                  >
+                                    הסר הרשאות
+                                  </Button>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-10">
+                            <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                            <h3 className="text-lg font-medium mb-2">אין מנהלי מערכת</h3>
+                            <p className="text-gray-500">הוסף מנהל מערכת ראשון כדי לאפשר ניהול של האתר</p>
                           </div>
                         )}
                       </TabsContent>
