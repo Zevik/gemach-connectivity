@@ -42,21 +42,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setLoading(true);
     
-    // Get the current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        handleSession(session);
+    const checkSession = async () => {
+      try {
+        // Get the current session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // יש סשן פעיל מסופהבייס - נטפל בו
+          await handleSession(session);
+        } else {
+          // אין סשן פעיל - ננסה לקחת מידע מהלוקל סטורג' 
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            try {
+              const parsedUser = JSON.parse(storedUser) as User;
+              setUser(parsedUser);
+              
+              // בדיקת תוקף הסשן - ננסה לרענן את האימות
+              const { data: refreshData, error: refreshError } = await supabase.auth.getUser();
+              if (!refreshError && refreshData.user) {
+                // הסשן רענן - נעדכן את הנתונים בהתאם
+                await handleSession({
+                  access_token: '',
+                  refresh_token: '',
+                  expires_in: 0,
+                  expires_at: 0,
+                  token_type: '',
+                  user: refreshData.user
+                });
+              } else {
+                console.log('Session expired or invalid, but using stored user data for UI');
+              }
+            } catch (err) {
+              console.error('Error parsing stored user:', err);
+              localStorage.removeItem('user');
+              setUser(null);
+            }
+          } else {
+            setUser(null);
+          }
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+    
+    checkSession();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         if (session) {
-          handleSession(session);
+          await handleSession(session);
         } else {
-          setUser(null);
+          // רק אם אין משתמש בלוקל סטורג', נאפס את המשתמש הנוכחי
+          const storedUser = localStorage.getItem('user');
+          if (!storedUser) {
+            setUser(null);
+          }
         }
         setLoading(false);
       }

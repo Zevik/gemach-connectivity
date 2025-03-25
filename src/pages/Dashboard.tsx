@@ -68,7 +68,7 @@ const Dashboard = () => {
         const { data, error } = await supabase
           .from('gemachs')
           .select('*')
-          .eq('user_id', user.id);
+          .eq('owner_id', user.id);
 
         if (error) throw error;
 
@@ -110,15 +110,15 @@ const Dashboard = () => {
     const fetchPendingGemachs = async () => {
       try {
         setIsAdminLoading(true);
-        const { data, error } = await supabase
+        const { data: gemachsData, error: gemachsError } = await supabase
           .from('gemachs')
-          .select('*, profiles(email)')
+          .select('*')
           .is('is_approved', null);
 
-        if (error) throw error;
+        if (gemachsError) throw gemachsError;
 
         // המרת הנתונים למבנה שימושי יותר
-        const formattedData = data?.map(item => ({
+        const formattedData = gemachsData?.map(item => ({
           id: item.id,
           name: item.name,
           description: item.description,
@@ -128,7 +128,7 @@ const Dashboard = () => {
           phone: item.phone,
           hours: item.hours,
           image_url: item.image_url,
-          user_email: item.profiles?.email,
+          user_email: item.owner_email || "לא ידוע", // אנחנו לא צריכים את profiles
           status: 'pending',
           created_at: new Date(item.created_at).toLocaleDateString('he-IL')
         })) || [];
