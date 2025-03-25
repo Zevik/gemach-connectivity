@@ -2,28 +2,61 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, UserCircle, LogOut, Package, Settings, PlusCircle } from 'lucide-react';
+import { Loader2, UserCircle, LogOut, Package, PlusCircle, Edit, Trash2, Check, X, AlertCircle } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from '@/components/ui/use-toast';
+import { neighborhoods, categories } from '@/data/constants';
 
 interface UserGemach {
   id: string;
   name: string;
+  description?: string;
+  category?: string;
+  address?: string;
+  neighborhood?: string;
+  phone?: string;
+  hours?: string;
+  image_url?: string;
   status: 'pending' | 'approved' | 'rejected';
   created_at: string;
 }
 
+interface PendingGemach extends UserGemach {
+  user_email?: string;
+}
+
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [userGemachs, setUserGemachs] = useState<UserGemach[]>([]);
+  const [pendingGemachs, setPendingGemachs] = useState<PendingGemach[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdminLoading, setIsAdminLoading] = useState(true);
+  const [editGemach, setEditGemach] = useState<UserGemach | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { logout } = useAuth();
 
+  // טעינת הגמחים של המשתמש
   useEffect(() => {
-    // הפניה לדף ההתחברות אם אין משתמש מחובר
     if (!user) {
       navigate('/auth');
       return;
@@ -34,7 +67,7 @@ const Dashboard = () => {
         setIsLoading(true);
         const { data, error } = await supabase
           .from('gemachs')
-          .select('id, name, is_approved, created_at')
+          .select('*')
           .eq('user_id', user.id);
 
         if (error) throw error;
@@ -43,13 +76,25 @@ const Dashboard = () => {
         const formattedData = data?.map(item => ({
           id: item.id,
           name: item.name,
-          status: item.is_approved ? 'approved' : 'pending',
+          description: item.description,
+          category: item.category,
+          address: item.address,
+          neighborhood: item.neighborhood,
+          phone: item.phone,
+          hours: item.hours,
+          image_url: item.image_url,
+          status: item.is_approved === true ? 'approved' : item.is_approved === false ? 'rejected' : 'pending',
           created_at: new Date(item.created_at).toLocaleDateString('he-IL')
         })) || [];
 
         setUserGemachs(formattedData);
       } catch (error) {
         console.error('Error fetching user gemachs:', error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה בטעינת הגמ״חים",
+          description: "אירעה שגיאה בטעינת רשימת הגמ״חים שלך. אנא נסה שוב מאוחר יותר."
+        });
       } finally {
         setIsLoading(false);
       }
@@ -58,15 +103,164 @@ const Dashboard = () => {
     fetchUserGemachs();
   }, [user, navigate]);
 
+  // טעינת גמחים הממתינים לאישור (לאדמין בלבד)
+  useEffect(() => {
+    if (!user || !isAdmin) return;
+
+    const fetchPendingGemachs = async () => {
+      try {
+        setIsAdminLoading(true);
+        const { data, error } = await supabase
+          .from('gemachs')
+          .select('*, profiles(email)')
+          .is('is_approved', null);
+
+        if (error) throw error;
+
+        // המרת הנתונים למבנה שימושי יותר
+        const formattedData = data?.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description,
+          category: item.category,
+          address: item.address,
+          neighborhood: item.neighborhood,
+          phone: item.phone,
+          hours: item.hours,
+          image_url: item.image_url,
+          user_email: item.profiles?.email,
+          status: 'pending',
+          created_at: new Date(item.created_at).toLocaleDateString('he-IL')
+        })) || [];
+
+        setPendingGemachs(formattedData);
+      } catch (error) {
+        console.error('Error fetching pending gemachs:', error);
+      } finally {
+        setIsAdminLoading(false);
+      }
+    };
+
+    fetchPendingGemachs();
+  }, [user, isAdmin]);
+
+  // טיפול בלחיצה על "הוסף גמ״ח חדש"
   const handleAddGemach = () => {
     navigate('/register-gemach');
   };
 
+  // טיפול בלחיצה על "התנתק"
   const handleLogout = async () => {
     await logout();
     navigate('/');
   };
 
+  // עדכון פרטי הגמ״ח
+  const handleUpdate = async (gemach: UserGemach) => {
+    try {
+      setIsProcessing(true);
+      const { error } = await supabase
+        .from('gemachs')
+        .update({
+          name: gemach.name,
+          description: gemach.description,
+          category: gemach.category,
+          address: gemach.address,
+          neighborhood: gemach.neighborhood,
+          phone: gemach.phone,
+          hours: gemach.hours,
+          // אם יש תמונה חדשה, היא תעלה בנפרד
+        })
+        .eq('id', gemach.id);
+
+      if (error) throw error;
+
+      // עדכון התצוגה
+      setUserGemachs(prev => prev.map(g => g.id === gemach.id ? {...g, ...gemach} : g));
+
+      toast({
+        title: "הגמ״ח עודכן בהצלחה",
+        description: "הפרטים עודכנו בהצלחה במערכת",
+      });
+
+      setEditGemach(null);
+    } catch (error) {
+      console.error('Error updating gemach:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בעדכון הגמ״ח",
+        description: "אירעה שגיאה בעדכון הגמ״ח. אנא נסה שוב מאוחר יותר."
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // מחיקת גמ״ח
+  const handleDelete = async (id: string) => {
+    try {
+      setIsProcessing(true);
+      const { error } = await supabase
+        .from('gemachs')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // עדכון התצוגה
+      setUserGemachs(prev => prev.filter(g => g.id !== id));
+
+      toast({
+        title: "הגמ״ח נמחק בהצלחה",
+        description: "הגמ״ח הוסר בהצלחה מהמערכת",
+      });
+      
+      setDeleteId(null);
+    } catch (error) {
+      console.error('Error deleting gemach:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה במחיקת הגמ״ח",
+        description: "אירעה שגיאה במחיקת הגמ״ח. אנא נסה שוב מאוחר יותר."
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // אישור או דחיית גמ״ח (לאדמין בלבד)
+  const handleApproval = async (id: string, approve: boolean) => {
+    try {
+      setIsProcessing(true);
+      const { error } = await supabase
+        .from('gemachs')
+        .update({ is_approved: approve })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // עדכון התצוגה
+      setPendingGemachs(prev => prev.filter(g => g.id !== id));
+
+      toast({
+        title: approve ? "הגמ״ח אושר בהצלחה" : "הגמ״ח נדחה",
+        description: approve 
+          ? "הגמ״ח אושר ויופיע כעת בתוצאות החיפוש" 
+          : "הגמ״ח נדחה ולא יופיע בתוצאות החיפוש",
+      });
+    } catch (error) {
+      console.error('Error updating gemach approval:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בעדכון סטטוס הגמ״ח",
+        description: "אירעה שגיאה בעדכון סטטוס הגמ״ח. אנא נסה שוב מאוחר יותר."
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // טעינה
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -97,6 +291,9 @@ const Dashboard = () => {
                     <UserCircle className="h-20 w-20 text-sky-600 mb-3" />
                     <h2 className="text-xl font-bold">{user?.name || 'משתמש'}</h2>
                     <p className="text-gray-500 text-sm">{user?.email}</p>
+                    {isAdmin && (
+                      <span className="mt-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">מנהל מערכת</span>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -142,7 +339,7 @@ const Dashboard = () => {
                   <Tabs defaultValue="my-gemachs">
                     <TabsList className="mb-6">
                       <TabsTrigger value="my-gemachs">הגמ״חים שלי</TabsTrigger>
-                      <TabsTrigger value="activity">פעילות אחרונה</TabsTrigger>
+                      {isAdmin && <TabsTrigger value="pending">ממתינים לאישור</TabsTrigger>}
                     </TabsList>
                     
                     <TabsContent value="my-gemachs">
@@ -154,6 +351,7 @@ const Dashboard = () => {
                                 <div>
                                   <h3 className="font-medium">{gemach.name}</h3>
                                   <p className="text-sm text-gray-500">נוצר: {gemach.created_at}</p>
+                                  <p className="text-sm text-gray-500">קטגוריה: {gemach.category}</p>
                                 </div>
                                 <div className="flex items-center">
                                   <span className={`px-3 py-1 rounded-full text-xs ${
@@ -169,6 +367,160 @@ const Dashboard = () => {
                                       ? 'נדחה'
                                       : 'ממתין לאישור'}
                                   </span>
+
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        className="ml-2"
+                                        onClick={() => setEditGemach(gemach)}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                    </DialogTrigger>
+                                    {editGemach && editGemach.id === gemach.id && (
+                                      <DialogContent className="sm:max-w-[550px]">
+                                        <DialogHeader>
+                                          <DialogTitle>עריכת גמ״ח</DialogTitle>
+                                          <DialogDescription>
+                                            ערוך את פרטי הגמ״ח שלך. לחץ על שמור לאישור השינויים.
+                                          </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-4 py-4">
+                                          <div>
+                                            <Label htmlFor="name">שם הגמ״ח</Label>
+                                            <Input 
+                                              id="name" 
+                                              value={editGemach.name} 
+                                              onChange={(e) => setEditGemach({...editGemach, name: e.target.value})} 
+                                            />
+                                          </div>
+                                          <div>
+                                            <Label htmlFor="description">תיאור</Label>
+                                            <Textarea 
+                                              id="description" 
+                                              value={editGemach.description} 
+                                              onChange={(e) => setEditGemach({...editGemach, description: e.target.value})} 
+                                            />
+                                          </div>
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                              <Label htmlFor="category">קטגוריה</Label>
+                                              <Select 
+                                                value={editGemach.category} 
+                                                onValueChange={(value) => setEditGemach({...editGemach, category: value})}
+                                              >
+                                                <SelectTrigger>
+                                                  <SelectValue placeholder="בחר קטגוריה" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  {categories.map((category) => (
+                                                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
+                                            </div>
+                                            <div>
+                                              <Label htmlFor="neighborhood">שכונה</Label>
+                                              <Select 
+                                                value={editGemach.neighborhood} 
+                                                onValueChange={(value) => setEditGemach({...editGemach, neighborhood: value})}
+                                              >
+                                                <SelectTrigger>
+                                                  <SelectValue placeholder="בחר שכונה" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  {neighborhoods.map((neighborhood) => (
+                                                    <SelectItem key={neighborhood} value={neighborhood}>{neighborhood}</SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <Label htmlFor="address">כתובת</Label>
+                                            <Input 
+                                              id="address" 
+                                              value={editGemach.address} 
+                                              onChange={(e) => setEditGemach({...editGemach, address: e.target.value})} 
+                                            />
+                                          </div>
+                                          <div>
+                                            <Label htmlFor="phone">טלפון</Label>
+                                            <Input 
+                                              id="phone" 
+                                              value={editGemach.phone} 
+                                              onChange={(e) => setEditGemach({...editGemach, phone: e.target.value})} 
+                                            />
+                                          </div>
+                                          <div>
+                                            <Label htmlFor="hours">שעות פעילות</Label>
+                                            <Input 
+                                              id="hours" 
+                                              value={editGemach.hours} 
+                                              onChange={(e) => setEditGemach({...editGemach, hours: e.target.value})} 
+                                            />
+                                          </div>
+                                        </div>
+                                        <DialogFooter>
+                                          <Button 
+                                            variant="outline" 
+                                            onClick={() => setEditGemach(null)}
+                                            disabled={isProcessing}
+                                          >
+                                            ביטול
+                                          </Button>
+                                          <Button 
+                                            onClick={() => handleUpdate(editGemach)}
+                                            disabled={isProcessing}
+                                          >
+                                            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                            שמור שינויים
+                                          </Button>
+                                        </DialogFooter>
+                                      </DialogContent>
+                                    )}
+                                  </Dialog>
+
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        className="text-red-500 hover:text-red-600"
+                                        onClick={() => setDeleteId(gemach.id)}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[425px]">
+                                      <DialogHeader>
+                                        <DialogTitle>מחיקת גמ״ח</DialogTitle>
+                                        <DialogDescription>
+                                          האם אתה בטוח שברצונך למחוק את הגמ״ח? פעולה זו אינה ניתנת לביטול.
+                                        </DialogDescription>
+                                      </DialogHeader>
+                                      <DialogFooter className="mt-4">
+                                        <Button 
+                                          variant="outline" 
+                                          onClick={() => setDeleteId(null)}
+                                          disabled={isProcessing}
+                                        >
+                                          ביטול
+                                        </Button>
+                                        <Button 
+                                          variant="destructive" 
+                                          onClick={() => deleteId && handleDelete(deleteId)}
+                                          disabled={isProcessing}
+                                        >
+                                          {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                          מחק
+                                        </Button>
+                                      </DialogFooter>
+                                    </DialogContent>
+                                  </Dialog>
+
                                   <Button 
                                     variant="ghost" 
                                     size="sm"
@@ -195,11 +547,85 @@ const Dashboard = () => {
                       )}
                     </TabsContent>
                     
-                    <TabsContent value="activity">
-                      <div className="text-center py-10 text-gray-500">
-                        אין פעילות חדשה להצגה
-                      </div>
-                    </TabsContent>
+                    {isAdmin && (
+                      <TabsContent value="pending">
+                        {isAdminLoading ? (
+                          <div className="flex justify-center items-center py-20">
+                            <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+                            <span className="mr-2">טוען גמ״חים ממתינים...</span>
+                          </div>
+                        ) : pendingGemachs.length > 0 ? (
+                          <div className="space-y-4">
+                            {pendingGemachs.map((gemach) => (
+                              <Card key={gemach.id}>
+                                <CardContent className="p-4">
+                                  <div className="flex justify-between items-start mb-3">
+                                    <div>
+                                      <h3 className="font-medium text-lg">{gemach.name}</h3>
+                                      <p className="text-sm text-gray-500">
+                                        נשלח על ידי: {gemach.user_email || 'משתמש'} | נוצר: {gemach.created_at}
+                                      </p>
+                                    </div>
+                                    <span className="px-3 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
+                                      ממתין לאישור
+                                    </span>
+                                  </div>
+                                  
+                                  <div className="grid md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                      <strong className="block text-sm mb-1">קטגוריה:</strong>
+                                      <span>{gemach.category}</span>
+                                    </div>
+                                    <div>
+                                      <strong className="block text-sm mb-1">שכונה:</strong>
+                                      <span>{gemach.neighborhood}</span>
+                                    </div>
+                                    <div>
+                                      <strong className="block text-sm mb-1">כתובת:</strong>
+                                      <span>{gemach.address}</span>
+                                    </div>
+                                    <div>
+                                      <strong className="block text-sm mb-1">טלפון:</strong>
+                                      <span>{gemach.phone}</span>
+                                    </div>
+                                  </div>
+                                  
+                                  <div className="mb-4">
+                                    <strong className="block text-sm mb-1">תיאור:</strong>
+                                    <p className="text-gray-700">{gemach.description}</p>
+                                  </div>
+                                </CardContent>
+                                <CardFooter className="flex justify-end gap-2 p-4 pt-0">
+                                  <Button 
+                                    variant="outline" 
+                                    className="text-red-500"
+                                    onClick={() => handleApproval(gemach.id, false)}
+                                    disabled={isProcessing}
+                                  >
+                                    <X className="h-4 w-4 mr-2" />
+                                    דחה
+                                  </Button>
+                                  <Button 
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => handleApproval(gemach.id, true)}
+                                    disabled={isProcessing}
+                                  >
+                                    <Check className="h-4 w-4 mr-2" />
+                                    אשר
+                                  </Button>
+                                </CardFooter>
+                              </Card>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-10">
+                            <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                            <h3 className="text-lg font-medium mb-2">אין גמ״חים הממתינים לאישור</h3>
+                            <p className="text-gray-500">כל הגמ״חים אושרו או נדחו</p>
+                          </div>
+                        )}
+                      </TabsContent>
+                    )}
                   </Tabs>
                 </CardContent>
               </Card>
