@@ -123,8 +123,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin,
       });
       
-      // Redirect to home page instead of dashboard
-      navigate('/');
+      // Redirect to dashboard instead of home page
+      navigate('/dashboard');
       
       return user;
     } catch (error: any) {

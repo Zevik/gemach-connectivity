@@ -14,9 +14,9 @@ const AuthCallback = () => {
         
         if (error) throw error;
         
-        // אם האימות הצליח, ננווט לדף הבית
+        // אם האימות הצליח, ננווט לדף הבקרה
         if (data.session) {
-          navigate('/');
+          navigate('/dashboard');
         } else {
           navigate('/auth');
         }

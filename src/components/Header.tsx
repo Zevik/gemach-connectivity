@@ -26,7 +26,7 @@ const Header = () => {
       <Container>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-x-8">
-            <Link to="/" className="text-2xl font-bold">גמ״ח קונקטיביטי</Link>
+            <Link to="/" className="text-2xl font-bold">מרכז הגמ״חים</Link>
             <nav className="hidden md:flex gap-x-6">
               <Link to="/" className="transition-colors hover:text-sky-100">דף הבית</Link>
               <Link to="/register-gemach" className="transition-colors hover:text-sky-100">הוספת גמ"ח</Link>

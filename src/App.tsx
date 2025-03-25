@@ -9,6 +9,7 @@ import NotFound from "@/pages/NotFound";
 import Auth from "@/pages/Auth";
 import AuthCallback from "@/pages/AuthCallback";
 import AdminDashboard from "@/pages/AdminDashboard";
+import Dashboard from "@/pages/Dashboard";
 import GemachDetail from "@/pages/GemachDetail";
 import RegisterGemach from "@/pages/RegisterGemach";
 import RegistrationSuccess from "@/pages/RegistrationSuccess";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/gemach/:id" element={<GemachDetail />} />
             <Route path="/register-gemach" element={<RegisterGemach />} />
             <Route path="/registration-success" element={<RegistrationSuccess />} />
