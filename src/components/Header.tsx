@@ -41,11 +41,11 @@ const Header = () => {
             {user ? (
               <>
                 <span className="hidden md:inline-block ml-2">שלום, {user?.email}</span>
-                <Button onClick={logout} variant="outline" className="text-white border-white hover:bg-sky-700">התנתק</Button>
+                <Button onClick={logout} variant="ghost" className="text-white hover:bg-sky-700 hover:text-white">התנתק</Button>
               </>
             ) : (
               <Link to="/auth">
-                <Button className="bg-transparent text-white border-white hover:bg-sky-700 hover:text-white">התחבר / הרשם</Button>
+                <Button variant="ghost" className="text-white hover:bg-sky-700 hover:text-white">התחבר / הרשם</Button>
               </Link>
             )}
           </div>

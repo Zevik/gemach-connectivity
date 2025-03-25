@@ -80,6 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAdmin: isAdmin,
       };
 
+      // Store user info in localStorage to persist between page refreshes
+      localStorage.setItem('user', JSON.stringify(userData));
+      
       setUser(userData);
 
       // Store admin status in user metadata if needed

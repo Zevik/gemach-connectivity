@@ -16,6 +16,18 @@ const AuthCallback = () => {
         
         // אם האימות הצליח, ננווט לדף הבקרה
         if (data.session) {
+          // שמירת המידע על המשתמש ב-localStorage לאחר התחברות דרך גוגל
+          const isAdmin = data.session.user?.email === 'zaviner@gmail.com';
+          const userData = {
+            id: data.session.user.id,
+            email: data.session.user.email || '',
+            name: data.session.user?.user_metadata?.name || 
+                 data.session.user?.user_metadata?.full_name || '',
+            isAdmin
+          };
+          
+          localStorage.setItem('user', JSON.stringify(userData));
+          
           navigate('/dashboard');
         } else {
           navigate('/auth');
