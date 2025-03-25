@@ -156,7 +156,11 @@ const Index = () => {
       return data;
     } catch (error: any) {
       console.error('Error adding gemachs to Supabase:', error);
-      alert("שגיאה בהוספת גמחים: " + (error.message || "שגיאה לא ידועה"));
+      toast({
+        variant: "destructive",
+        title: "שגיאה בהוספת גמחים",
+        description: error.message || "שגיאה לא ידועה"
+      });
       return null;
     }
   };
