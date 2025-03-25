@@ -30,6 +30,7 @@ const Index = () => {
       const { data, error } = await supabase
         .from('gemachs')
         .select('*')
+        .eq('is_approved', true)
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -39,6 +40,11 @@ const Index = () => {
       setGemachs(data || []);
     } catch (error) {
       console.error('Error fetching gemachs:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה בטעינת הגמחים",
+        description: "אירעה שגיאה בטעינת רשימת הגמחים. אנא נסה שוב מאוחר יותר."
+      });
       setGemachs([]);
     } finally {
       setIsLoading(false);
@@ -52,7 +58,7 @@ const Index = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement search functionality
+    // Search is handled by the filteredGemachs filter function
   };
 
   const navigateToRegister = () => {
@@ -60,7 +66,6 @@ const Index = () => {
   };
 
   const filteredGemachs = gemachs.filter(gemach => {
-    // Check if the required properties exist
     const gemachName = gemach.name || '';
     const gemachDescription = gemach.description || '';
     const gemachNeighborhood = gemach.neighborhood || '';
@@ -142,7 +147,7 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Featured Gemachs */}
+        {/* Gemachs Grid */}
         <section className="py-12 md:py-16 px-4">
           <div className="container mx-auto">
             <div className="flex justify-between items-center mb-8 md:mb-12">
@@ -166,11 +171,13 @@ const Index = () => {
                       onClick={() => setSelectedGemach(gemach)}
                     >
                       <div className="relative h-48 overflow-hidden">
-                        <img 
-                          src={gemach.image_url} 
-                          alt={gemach.name} 
-                          className="w-full h-full object-cover"
-                        />
+                        {gemach.image_url && (
+                          <img 
+                            src={gemach.image_url} 
+                            alt={gemach.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        )}
                         <div className="absolute top-3 right-3 bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
                           {gemach.category}
                         </div>
@@ -209,11 +216,13 @@ const Index = () => {
           {selectedGemach && (
             <>
               <div className="relative h-52 overflow-hidden">
-                <img 
-                  src={selectedGemach.image_url} 
-                  alt={selectedGemach.name} 
-                  className="w-full h-full object-cover"
-                />
+                {selectedGemach.image_url && (
+                  <img 
+                    src={selectedGemach.image_url} 
+                    alt={selectedGemach.name} 
+                    className="w-full h-full object-cover"
+                  />
+                )}
                 <div className="absolute top-3 right-3">
                   <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
                     {selectedGemach.category}
