@@ -11,6 +11,7 @@ import AuthCallback from "@/pages/AuthCallback";
 import AdminDashboard from "@/pages/AdminDashboard";
 import Dashboard from "@/pages/Dashboard";
 import GemachDetail from "@/pages/GemachDetail";
+import EditGemach from "@/pages/EditGemach";
 import RegisterGemach from "@/pages/RegisterGemach";
 import RegistrationSuccess from "@/pages/RegistrationSuccess";
 import About from "@/pages/About";
@@ -98,6 +99,11 @@ const App = () => (
               </PrivateRoute>
             } />
             <Route path="/gemach/:id" element={<GemachDetail />} />
+            <Route path="/gemach/:id/edit" element={
+              <PrivateRoute>
+                <EditGemach />
+              </PrivateRoute>
+            } />
             <Route path="/register-gemach" element={
               <PrivateRoute>
                 <RegisterGemach />

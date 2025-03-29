@@ -298,6 +298,20 @@ const GemachDetail = () => {
                   </Button>
                 </div>
               )}
+              
+              {/* הוספת כפתור עריכה למשתמש שהוא בעל הגמ"ח אך לא מנהל */}
+              {!isAdmin && user && user.id === gemach.owner_id && (
+                <div className="mt-3">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => navigate(`/gemach/${gemach.id}/edit`)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    ערוך גמ"ח
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -331,6 +345,26 @@ const GemachDetail = () => {
                 מחק גמ"ח
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+      
+      {/* הוספת כפתור עריכה למשתמש רגיל שהוא בעל הגמ"ח כאשר הגמ"ח מאושר */}
+      {!isAdmin && user && gemach.is_approved === true && user.id === gemach.owner_id && (
+        <div className="mb-6 p-4 rounded-lg bg-gray-50 border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium">ניהול הגמ"ח שלי</h3>
+              <p className="text-sm text-gray-500">אפשרויות עריכה זמינות לך כבעל הגמ"ח</p>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => navigate(`/gemach/${gemach.id}/edit`)}
+            >
+              <Edit className="h-4 w-4 mr-1" />
+              ערוך גמ"ח
+            </Button>
           </div>
         </div>
       )}
