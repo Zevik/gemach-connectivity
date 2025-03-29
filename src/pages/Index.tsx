@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,50 @@ import { neighborhoods, categories } from '@/data/constants';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// פונקציה להשגת תמונת הגמ״ח - זהה לפונקציה בעמוד GemachDetail
+const fetchGemachImage = async (gemachId: string) => {
+  try {
+    console.log('Fetching gemach image for ID:', gemachId);
+    
+    // בדיקה אם יש תמונת גמ״ח
+    const { data, error } = await supabase
+      .from('gemach_images')
+      .select('storage_path')
+      .eq('gemach_id', gemachId)
+      .eq('is_primary', true)
+      .single();
+
+    if (error) {
+      console.error('Error fetching gemach image data:', error);
+      return null;
+    }
+
+    if (!data || !data.storage_path) {
+      console.log('No image found for gemach ID:', gemachId);
+      return null;
+    }
+
+    console.log('Found image with storage path:', data.storage_path);
+
+    // השגת ה-URL הציבורי של התמונה
+    const { data: publicUrlData } = supabase.storage
+      .from('images')
+      .getPublicUrl(data.storage_path);
+
+    if (!publicUrlData || !publicUrlData.publicUrl) {
+      console.error('Failed to get public URL for image', data.storage_path);
+      return null;
+    }
+
+    console.log('Got public URL:', publicUrlData.publicUrl);
+    return publicUrlData.publicUrl;
+  } catch (error) {
+    console.error('Exception in fetchGemachImage:', error);
+    return null;
+  }
+};
 
 const Index = () => {
   const navigate = useNavigate();
@@ -22,6 +67,7 @@ const Index = () => {
   const [gemachs, setGemachs] = useState<any[]>([]);
   const [selectedGemach, setSelectedGemach] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
 
   // Load gemachs from Supabase
   const fetchGemachs = async () => {
@@ -37,7 +83,36 @@ const Index = () => {
         throw error;
       }
       
-      setGemachs(data || []);
+      if (data) {
+        // Initialize image loading states
+        const loadingStates: Record<string, boolean> = {};
+        data.forEach(gemach => {
+          loadingStates[gemach.id] = true;
+        });
+        setImageLoadingStates(loadingStates);
+        
+        // שאיבת נתוני הגמחים כולל תמונות
+        const gemachsWithImages = await Promise.all(
+          data.map(async (gemach) => {
+            const imageUrl = await fetchGemachImage(gemach.id);
+            
+            // עדכון סטטוס הטעינה לאחר השגת התמונה
+            setImageLoadingStates(prev => ({
+              ...prev,
+              [gemach.id]: false
+            }));
+            
+            return {
+              ...gemach,
+              image_url: imageUrl
+            };
+          })
+        );
+        
+        setGemachs(gemachsWithImages);
+      } else {
+        setGemachs([]);
+      }
     } catch (error) {
       console.error('Error fetching gemachs:', error);
       toast({
@@ -171,12 +246,24 @@ const Index = () => {
                       onClick={() => setSelectedGemach(gemach)}
                     >
                       <div className="relative h-48 overflow-hidden">
-                        {gemach.image_url && (
+                        {imageLoadingStates[gemach.id] ? (
+                          <Skeleton className="h-full w-full" />
+                        ) : gemach.image_url ? (
                           <img 
                             src={gemach.image_url} 
                             alt={gemach.name} 
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.error('Failed to load image:', gemach.image_url);
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null; // Prevent infinite loop
+                              target.src = '/placeholder.svg'; // Use placeholder
+                            }}
                           />
+                        ) : (
+                          <div className="h-full bg-gray-100 flex items-center justify-center">
+                            <p className="text-gray-500">אין תמונה זמינה</p>
+                          </div>
                         )}
                         <div className="absolute top-3 right-3 bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
                           {gemach.category}
@@ -216,12 +303,22 @@ const Index = () => {
           {selectedGemach && (
             <>
               <div className="relative h-52 overflow-hidden">
-                {selectedGemach.image_url && (
+                {selectedGemach.image_url ? (
                   <img 
                     src={selectedGemach.image_url} 
                     alt={selectedGemach.name} 
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.error('Failed to load dialog image:', selectedGemach.image_url);
+                      const target = e.target as HTMLImageElement;
+                      target.onerror = null; // Prevent infinite loop
+                      target.src = '/placeholder.svg'; // Use placeholder
+                    }}
                   />
+                ) : (
+                  <div className="h-full bg-gray-100 flex items-center justify-center">
+                    <p className="text-gray-500">אין תמונה זמינה</p>
+                  </div>
                 )}
                 <div className="absolute top-3 right-3">
                   <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
@@ -269,7 +366,9 @@ const Index = () => {
                 </div>
                 
                 <div className="mt-6 flex justify-end">
-                  <Button onClick={() => setSelectedGemach(null)}>סגור</Button>
+                  <Button onClick={() => navigate(`/gemach/${selectedGemach.id}`)}>
+                    צפייה בעמוד הגמ״ח
+                  </Button>
                 </div>
               </div>
             </>
