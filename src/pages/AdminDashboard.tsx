@@ -20,11 +20,26 @@ interface Gemach {
   is_approved: boolean | null;
   is_deleted: boolean | null;
   deleted_at: string | null;
+  // Additional fields to match the data structure
+  address: string;
+  neighborhood: string;
+  location_instructions: string | null;
+  manager_phone: string | null;
+  email: string | null;
+  hours: string;
+  has_fee: boolean;
+  fee_details: string | null;
+  website_url: string | null;
+  facebook_url: string | null;
+  city: string | null;
+  featured: boolean | null;
+  owner_id: string | null;
+  updated_at: string | null;
 }
 
 const AdminDashboard = () => {
-  const { user, isLoading } = useAuth();
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const { user, isAdmin, loading } = useAuth();
+  const [isAdminState, setIsAdminState] = useState<boolean>(false);
   const [pendingGemachs, setPendingGemachs] = useState<Gemach[]>([]);
   const [approvedGemachs, setApprovedGemachs] = useState<Gemach[]>([]);
   const [deletedGemachs, setDeletedGemachs] = useState<Gemach[]>([]);
@@ -45,7 +60,7 @@ const AdminDashboard = () => {
           return;
         }
         
-        setIsAdmin(data || false);
+        setIsAdminState(data || false);
         
         if (data) {
           fetchPendingGemachs();
@@ -79,7 +94,36 @@ const AdminDashboard = () => {
         return;
       }
       
-      setPendingGemachs(data || []);
+      if (data) {
+        // Convert the data to the correct Gemach type
+        const formattedData: Gemach[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          description: item.description,
+          phone: item.phone,
+          created_at: item.created_at,
+          owner_email: item.owner_email ?? null,
+          is_approved: item.is_approved,
+          is_deleted: false, // Default value since it might not be in the response
+          deleted_at: null,  // Default value since it might not be in the response
+          address: item.address,
+          neighborhood: item.neighborhood,
+          location_instructions: item.location_instructions,
+          manager_phone: item.manager_phone,
+          email: item.email,
+          hours: item.hours,
+          has_fee: item.has_fee,
+          fee_details: item.fee_details,
+          website_url: item.website_url,
+          facebook_url: item.facebook_url,
+          city: item.city,
+          featured: item.featured,
+          owner_id: item.owner_id,
+          updated_at: item.updated_at
+        }));
+        setPendingGemachs(formattedData);
+      }
     } catch (error) {
       console.error('Error fetching pending gemachs:', error);
     } finally {
@@ -107,7 +151,36 @@ const AdminDashboard = () => {
         return;
       }
       
-      setApprovedGemachs(data || []);
+      if (data) {
+        // Convert the data to the correct Gemach type
+        const formattedData: Gemach[] = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          description: item.description,
+          phone: item.phone,
+          created_at: item.created_at,
+          owner_email: item.owner_email ?? null,
+          is_approved: item.is_approved,
+          is_deleted: false, // Default value since it might not be in the response
+          deleted_at: null,  // Default value since it might not be in the response
+          address: item.address,
+          neighborhood: item.neighborhood,
+          location_instructions: item.location_instructions,
+          manager_phone: item.manager_phone,
+          email: item.email,
+          hours: item.hours,
+          has_fee: item.has_fee,
+          fee_details: item.fee_details,
+          website_url: item.website_url,
+          facebook_url: item.facebook_url,
+          city: item.city,
+          featured: item.featured,
+          owner_id: item.owner_id,
+          updated_at: item.updated_at
+        }));
+        setApprovedGemachs(formattedData);
+      }
     } catch (error) {
       console.error('Error fetching approved gemachs:', error);
     } finally {
@@ -177,12 +250,12 @@ const AdminDashboard = () => {
   };
 
   // אם המשתמש לא מחובר, הפנה אותו לדף ההתחברות
-  if (!isLoading && !user) {
+  if (!loading && !user) {
     return <Navigate to="/auth" replace />;
   }
 
   // אם המשתמש לא מנהל, הפנה אותו לדף הראשי
-  if (!isLoading && user && !isAdmin) {
+  if (!loading && user && !isAdmin) {
     return (
       <div className="container mx-auto px-4 py-8 text-center" dir="rtl">
         <AlertTriangle className="mx-auto h-16 w-16 text-yellow-500 mb-4" />
@@ -193,7 +266,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="w-16 h-16 border-t-4 border-primary border-solid rounded-full animate-spin"></div>

@@ -150,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<void> => {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -180,8 +180,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Redirect to dashboard instead of home page
       navigate('/dashboard');
-      
-      return user;
     } catch (error: any) {
       console.error('Error logging in:', error.message);
       throw error;
