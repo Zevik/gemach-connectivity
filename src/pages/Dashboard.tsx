@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -690,7 +691,7 @@ const Dashboard = () => {
                                     className="ml-2"
                                     onClick={() => navigate(`/gemach/${gemach.id}`)}
                                   >
-                                    צפה
+                                    <Eye className="h-4 w-4" />
                                   </Button>
                                 </div>
                               </CardContent>
@@ -785,68 +786,133 @@ const Dashboard = () => {
                                         ערוך
                                       </Button>
                                     </DialogTrigger>
-                                    {editGemach && editGemach.id === gemach.id && (
-                                      <DialogContent className="sm:max-w-[550px]">
-                                        <DialogHeader>
-                                          <DialogTitle>עריכת גמ״ח</DialogTitle>
-                                          <DialogDescription>
-                                            ערוך את פרטי הגמ״ח. לחץ על שמור לאישור השינויים.
-                                          </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="space-y-4 py-4">
-                                          <div>
-                                            <Label htmlFor="name">שם הגמ״ח</Label>
-                                            <Input 
-                                              id="name" 
-                                              value={editGemach.name} 
-                                              onChange={(e) => setEditGemach({...editGemach, name: e.target.value})} 
-                                            />
-                                          </div>
-                                          <div>
-                                            <Label htmlFor="description">תיאור</Label>
-                                            <Textarea 
-                                              id="description" 
-                                              value={editGemach.description} 
-                                              onChange={(e) => setEditGemach({...editGemach, description: e.target.value})} 
-                                            />
-                                          </div>
-                                          <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                              <Label htmlFor="category">קטגוריה</Label>
-                                              <Select 
-                                                value={editGemach.category} 
-                                                onValueChange={(value) => setEditGemach({...editGemach, category: value})}
-                                              >
-                                                <SelectTrigger>
-                                                  <SelectValue placeholder="בחר קטגוריה" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                  {categories.map((category) => (
-                                                    <SelectItem key={category} value={category}>{category}</SelectItem>
-                                                  ))}
-                                                </SelectContent>
-                                              </Select>
-                                            </div>
-                                            <div>
-                                              <Label htmlFor="neighborhood">שכונה</Label>
-                                              <Select 
-                                                value={editGemach.neighborhood} 
-                                                onValueChange={(value) => setEditGemach({...editGemach, neighborhood: value})}
-                                              >
-                                                <SelectTrigger>
-                                                  <SelectValue placeholder="בחר שכונה" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                  {neighborhoods.map((neighborhood) => (
-                                                    <SelectItem key={neighborhood} value={neighborhood}>{neighborhood}</SelectItem>
-                                                  ))}
-                                                </SelectContent>
-                                              </Select>
-                                            </div>
-                                          </div>
-                                          <div>
-                                            <Label htmlFor="address">כתובת</Label>
-                                            <Input 
-                                              id="address" 
-                                              value={editGemach.address} 
-                                              onChange={(e) => setEditGemach({...edit
+                                  </Dialog>
+
+                                  <Button 
+                                    variant="default" 
+                                    size="sm" 
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => handleApproval(gemach.id, true)}
+                                    disabled={isProcessing}
+                                  >
+                                    {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+                                    אשר
+                                  </Button>
+                                  
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => handleApproval(gemach.id, false)}
+                                    disabled={isProcessing}
+                                  >
+                                    {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <X className="h-4 w-4 mr-2" />}
+                                    דחה
+                                  </Button>
+                                  
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => navigate(`/gemach/${gemach.id}`)}
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    צפה
+                                  </Button>
+                                </CardFooter>
+                              </Card>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-10">
+                            <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                            <h3 className="text-lg font-medium mb-2">אין גמ״חים הממתינים לאישור</h3>
+                            <p className="text-gray-500">כל הגמ״חים אושרו או נדחו</p>
+                          </div>
+                        )}
+                      </TabsContent>
+                    )}
+                    
+                    {isAdmin && (
+                      <TabsContent value="admins">
+                        <div className="space-y-6">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle>הוספת מנהל חדש</CardTitle>
+                              <CardDescription>הוסף משתמש חדש עם הרשאות ניהול</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="flex gap-3">
+                                <Input
+                                  placeholder="הכנס כתובת אימייל"
+                                  value={newAdminEmail}
+                                  onChange={(e) => setNewAdminEmail(e.target.value)}
+                                  className="flex-1"
+                                />
+                                <Button 
+                                  onClick={handleAddAdmin}
+                                  disabled={isProcessing || !newAdminEmail}
+                                >
+                                  {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                  הוסף מנהל
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          
+                          <Card>
+                            <CardHeader>
+                              <CardTitle>רשימת מנהלי המערכת</CardTitle>
+                              <CardDescription>ניהול מנהלי מערכת קיימים</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              {isUsersLoading ? (
+                                <div className="flex justify-center py-8">
+                                  <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+                                </div>
+                              ) : adminUsers.length > 0 ? (
+                                <div className="divide-y">
+                                  {adminUsers.map((admin) => (
+                                    <div key={admin.id} className="py-3 flex justify-between items-center">
+                                      <div>
+                                        <p className="font-medium">{admin.email}</p>
+                                        <p className="text-sm text-gray-500">
+                                          {admin.display_name || 'ללא שם תצוגה'}
+                                        </p>
+                                      </div>
+                                      {user?.id !== admin.id && (
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm"
+                                          onClick={() => handleRemoveAdmin(admin.id, admin.email)}
+                                          disabled={isProcessing}
+                                          className="text-red-500"
+                                        >
+                                          הסר הרשאות
+                                        </Button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="text-center py-8">
+                                  <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                                  <p className="text-gray-500">אין מנהלים נוספים במערכת</p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </TabsContent>
+                    )}
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default Dashboard;
