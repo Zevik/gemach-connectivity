@@ -1,5 +1,3 @@
-
-// הוספת פונקציה להשגת תמונת הגמ״ח
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +6,8 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { BadgeLabel } from "@/components/ui/badge-label";
+import { BackButton } from "@/components/ui/back-button";
 import { 
   PhoneIcon, 
   MailIcon, 
@@ -16,7 +16,8 @@ import {
   InfoIcon,
   LinkIcon,
   FacebookIcon,
-  PencilIcon
+  PencilIcon,
+  Share2Icon
 } from "lucide-react";
 
 interface GemachData {
@@ -82,6 +83,18 @@ const fetchGemachImage = async (gemachId: string) => {
   }
 };
 
+// Get badge variant based on category
+const getBadgeVariant = (category: string): "blue" | "green" | "orange" | "purple" | "default" => {
+  const categoryMap: Record<string, "blue" | "green" | "orange" | "purple" | "default"> = {
+    'השאלת ציוד': 'blue',
+    'מזון': 'green',
+    'בגדים': 'purple',
+    'רהיטים': 'orange',
+  };
+  
+  return categoryMap[category] || 'default';
+};
+
 const GemachDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [gemach, setGemach] = useState<GemachData | null>(null);
@@ -90,6 +103,30 @@ const GemachDetail = () => {
   const [imageLoading, setImageLoading] = useState(true);
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
+  
+  // Share functionality
+  const handleShare = async () => {
+    if (!gemach) return;
+    
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `גמ"ח ${gemach.name}`,
+          text: `פרטים על גמ"ח ${gemach.name} ב${gemach.neighborhood}`,
+          url: window.location.href,
+        });
+      } else {
+        // Fallback - copy to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        toast({
+          title: "הקישור הועתק",
+          description: "הקישור לגמ״ח הועתק ללוח",
+        });
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
   
   useEffect(() => {
     const fetchGemach = async () => {
@@ -180,18 +217,22 @@ const GemachDetail = () => {
       <Header />
       
       <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-          {/* כותרת עם כפתור עריכה */}
-          <div className="p-6 bg-primary text-white flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold">{gemach.name}</h1>
-              <p className="text-sm mt-2 text-white/90">
-                {gemach.category} | {gemach.neighborhood}
-              </p>
-            </div>
+        <div className="mb-4 flex justify-between items-center">
+          <BackButton />
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleShare}
+            >
+              <Share2Icon className="h-4 w-4 ml-1" />
+              שיתוף
+            </Button>
+            
             {canEdit && (
               <Button 
-                variant="secondary"
+                variant="outline"
                 size="sm"
                 asChild
               >
@@ -202,6 +243,26 @@ const GemachDetail = () => {
               </Button>
             )}
           </div>
+        </div>
+        
+        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+          {/* כותרת עם כפתור עריכה */}
+          <div className="p-6 bg-gradient-to-r from-sky-600 to-sky-700 text-white">
+            <div className="flex flex-col">
+              <div className="flex items-center space-x-2">
+                <BadgeLabel 
+                  variant={getBadgeVariant(gemach.category)}
+                  className="mb-2 ml-2"
+                >
+                  {gemach.category}
+                </BadgeLabel>
+              </div>
+              <h1 className="text-3xl font-bold">{gemach.name}</h1>
+              <p className="text-sm mt-2 text-white/90">
+                {gemach.neighborhood}
+              </p>
+            </div>
+          </div>
           
           {/* תמונת הגמ״ח - עם טיפול משופר במקרה של טעינה */}
           {imageLoading ? (
@@ -209,7 +270,7 @@ const GemachDetail = () => {
               <div className="w-8 h-8 border-t-2 border-primary border-solid rounded-full animate-spin"></div>
             </div>
           ) : imageUrl ? (
-            <div className="w-full h-64 md:h-96 overflow-hidden">
+            <div className="w-full h-64 md:h-80 overflow-hidden">
               <img 
                 src={imageUrl} 
                 alt={gemach?.name} 
@@ -223,7 +284,7 @@ const GemachDetail = () => {
               />
             </div>
           ) : (
-            <div className="w-full h-64 bg-gray-100 flex items-center justify-center">
+            <div className="w-full h-64 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
               <p className="text-gray-500">אין תמונה זמינה</p>
             </div>
           )}
@@ -233,71 +294,84 @@ const GemachDetail = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <h2 className="text-xl font-bold mb-4 flex items-center">
-                  <InfoIcon className="h-5 w-5 ml-1" />
+                  <InfoIcon className="h-5 w-5 ml-2" />
                   על הגמ״ח
                 </h2>
-                <p className="whitespace-pre-line mb-6">{gemach.description}</p>
-                
-                {gemach.has_fee && gemach.fee_details && (
-                  <div className="mb-6">
-                    <h3 className="font-bold mb-2">פרטי תשלום</h3>
-                    <p className="whitespace-pre-line">{gemach.fee_details}</p>
-                  </div>
-                )}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="whitespace-pre-line mb-6">{gemach.description}</p>
+                  
+                  {gemach.has_fee && gemach.fee_details && (
+                    <div className="mb-6 mt-4 border-t pt-4 border-gray-200">
+                      <h3 className="font-bold mb-2">פרטי תשלום</h3>
+                      <p className="whitespace-pre-line text-gray-700">{gemach.fee_details}</p>
+                    </div>
+                  )}
+                </div>
               </div>
               
               <div className="space-y-4">
                 <div>
                   <h2 className="text-xl font-bold mb-4">פרטי התקשרות</h2>
                   
-                  <div className="space-y-3">
-                    <p className="flex items-center">
-                      <PhoneIcon className="h-5 w-5 ml-2" />
-                      <span className="font-semibold ml-1">טלפון:</span>
-                      <a href={`tel:${gemach.phone}`} className="text-primary hover:underline mr-2">
-                        {gemach.phone}
-                      </a>
-                    </p>
+                  <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                    <a 
+                      href={`tel:${gemach.phone}`}
+                      className="flex items-center p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <PhoneIcon className="h-5 w-5 ml-3 text-green-600" />
+                      <div>
+                        <div className="font-semibold">טלפון</div>
+                        <div className="text-primary">{gemach.phone}</div>
+                      </div>
+                    </a>
                     
                     {gemach.manager_phone && (
-                      <p className="flex items-center">
-                        <PhoneIcon className="h-5 w-5 ml-2" />
-                        <span className="font-semibold ml-1">טלפון נוסף:</span>
-                        <a href={`tel:${gemach.manager_phone}`} className="text-primary hover:underline mr-2">
-                          {gemach.manager_phone}
-                        </a>
-                      </p>
+                      <a 
+                        href={`tel:${gemach.manager_phone}`}
+                        className="flex items-center p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <PhoneIcon className="h-5 w-5 ml-3 text-green-600" />
+                        <div>
+                          <div className="font-semibold">טלפון נוסף</div>
+                          <div className="text-primary">{gemach.manager_phone}</div>
+                        </div>
+                      </a>
                     )}
                     
                     {gemach.email && (
-                      <p className="flex items-center">
-                        <MailIcon className="h-5 w-5 ml-2" />
-                        <span className="font-semibold ml-1">אימייל:</span>
-                        <a href={`mailto:${gemach.email}`} className="text-primary hover:underline mr-2">
-                          {gemach.email}
-                        </a>
-                      </p>
+                      <a 
+                        href={`mailto:${gemach.email}`}
+                        className="flex items-center p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        <MailIcon className="h-5 w-5 ml-3 text-blue-600" />
+                        <div>
+                          <div className="font-semibold">אימייל</div>
+                          <div className="text-primary">{gemach.email}</div>
+                        </div>
+                      </a>
                     )}
                     
-                    <p className="flex items-start">
-                      <MapPinIcon className="h-5 w-5 ml-2 mt-0.5" />
-                      <span className="font-semibold ml-1">כתובת:</span>
-                      <span className="mr-2">{gemach.address}</span>
-                    </p>
+                    <div className="flex items-start p-2">
+                      <MapPinIcon className="h-5 w-5 ml-3 mt-1 text-red-600" />
+                      <div>
+                        <div className="font-semibold">כתובת</div>
+                        <div>{gemach.address}</div>
+                        
+                        {gemach.location_instructions && (
+                          <div className="mt-1 text-sm text-gray-600 whitespace-pre-line">
+                            {gemach.location_instructions}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                     
-                    {gemach.location_instructions && (
-                      <p className="flex items-start">
-                        <MapPinIcon className="h-5 w-5 ml-2 mt-0.5 opacity-0" />
-                        <span className="font-semibold ml-1">הוראות הגעה:</span>
-                        <span className="mr-2 whitespace-pre-line">{gemach.location_instructions}</span>
-                      </p>
-                    )}
-                    
-                    <p className="flex items-center">
-                      <ClockIcon className="h-5 w-5 ml-2" />
-                      <span className="font-semibold ml-1">שעות פעילות:</span>
-                      <span className="mr-2">{gemach.hours}</span>
-                    </p>
+                    <div className="flex items-start p-2">
+                      <ClockIcon className="h-5 w-5 ml-3 text-purple-600" />
+                      <div>
+                        <div className="font-semibold">שעות פעילות</div>
+                        <div className="whitespace-pre-line">{gemach.hours}</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
@@ -305,15 +379,15 @@ const GemachDetail = () => {
                 {(gemach.website_url || gemach.facebook_url) && (
                   <div className="pt-4">
                     <h3 className="font-bold mb-3">קישורים</h3>
-                    <div className="flex flex-col gap-2">
+                    <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                       {gemach.website_url && (
                         <a 
                           href={gemach.website_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center text-primary hover:underline"
+                          className="flex items-center p-2 hover:bg-gray-100 rounded-lg transition-colors text-primary"
                         >
-                          <LinkIcon className="h-4 w-4 ml-1" />
+                          <LinkIcon className="h-5 w-5 ml-2" />
                           אתר אינטרנט
                         </a>
                       )}
@@ -323,9 +397,9 @@ const GemachDetail = () => {
                           href={gemach.facebook_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center text-primary hover:underline"
+                          className="flex items-center p-2 hover:bg-gray-100 rounded-lg transition-colors text-primary"
                         >
-                          <FacebookIcon className="h-4 w-4 ml-1" />
+                          <FacebookIcon className="h-5 w-5 ml-2" />
                           דף פייסבוק
                         </a>
                       )}
