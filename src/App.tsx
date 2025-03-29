@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -99,11 +98,6 @@ const App = () => (
               </PrivateRoute>
             } />
             <Route path="/gemach/:id" element={<GemachDetail />} />
-            <Route path="/gemach/:id/edit" element={
-              <PrivateRoute>
-                <RegisterGemach />
-              </PrivateRoute>
-            } />
             <Route path="/register-gemach" element={
               <PrivateRoute>
                 <RegisterGemach />

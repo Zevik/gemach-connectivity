@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -151,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = async (email: string, password: string) => {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -181,6 +180,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Redirect to dashboard instead of home page
       navigate('/dashboard');
+      
+      return user;
     } catch (error: any) {
       console.error('Error logging in:', error.message);
       throw error;

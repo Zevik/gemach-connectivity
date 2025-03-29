@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -24,7 +23,7 @@ interface Gemach {
 }
 
 const AdminDashboard = () => {
-  const { user, loading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [pendingGemachs, setPendingGemachs] = useState<Gemach[]>([]);
   const [approvedGemachs, setApprovedGemachs] = useState<Gemach[]>([]);
@@ -80,21 +79,7 @@ const AdminDashboard = () => {
         return;
       }
       
-      // Transform data to match the Gemach interface
-      const formattedData: Gemach[] = (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        category: item.category || '',
-        description: item.description || '',
-        phone: item.phone || '',
-        created_at: item.created_at || '',
-        owner_email: item.email || null,
-        is_approved: item.is_approved,
-        is_deleted: false,
-        deleted_at: null
-      }));
-      
-      setPendingGemachs(formattedData);
+      setPendingGemachs(data || []);
     } catch (error) {
       console.error('Error fetching pending gemachs:', error);
     } finally {
@@ -122,21 +107,7 @@ const AdminDashboard = () => {
         return;
       }
       
-      // Transform data to match the Gemach interface
-      const formattedData: Gemach[] = (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        category: item.category || '',
-        description: item.description || '',
-        phone: item.phone || '',
-        created_at: item.created_at || '',
-        owner_email: item.email || null,
-        is_approved: item.is_approved,
-        is_deleted: false,
-        deleted_at: null
-      }));
-      
-      setApprovedGemachs(formattedData);
+      setApprovedGemachs(data || []);
     } catch (error) {
       console.error('Error fetching approved gemachs:', error);
     } finally {
@@ -206,12 +177,12 @@ const AdminDashboard = () => {
   };
 
   // אם המשתמש לא מחובר, הפנה אותו לדף ההתחברות
-  if (!loading && !user) {
+  if (!isLoading && !user) {
     return <Navigate to="/auth" replace />;
   }
 
   // אם המשתמש לא מנהל, הפנה אותו לדף הראשי
-  if (!loading && user && !isAdmin) {
+  if (!isLoading && user && !isAdmin) {
     return (
       <div className="container mx-auto px-4 py-8 text-center" dir="rtl">
         <AlertTriangle className="mx-auto h-16 w-16 text-yellow-500 mb-4" />
@@ -222,7 +193,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="w-16 h-16 border-t-4 border-primary border-solid rounded-full animate-spin"></div>
