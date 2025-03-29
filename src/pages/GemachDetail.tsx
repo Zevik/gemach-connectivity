@@ -39,9 +39,12 @@ interface GemachData {
   is_approved: boolean | null;
 }
 
-// פונקציה להשגת התמונה של הגמ״ח
+// פונקציה להשגת התמונה של הגמ״ח - שיפור בטיפול בשגיאות ובלוגיקה
 const fetchGemachImage = async (gemachId: string) => {
   try {
+    console.log('Fetching gemach image for ID:', gemachId);
+    
+    // בדיקה אם יש תמונת גמ״ח
     const { data, error } = await supabase
       .from('gemach_images')
       .select('storage_path')
@@ -49,19 +52,32 @@ const fetchGemachImage = async (gemachId: string) => {
       .eq('is_primary', true)
       .single();
 
-    if (error || !data) {
-      console.error('Error fetching gemach image:', error);
+    if (error) {
+      console.error('Error fetching gemach image data:', error);
       return null;
     }
+
+    if (!data || !data.storage_path) {
+      console.log('No image found for gemach ID:', gemachId);
+      return null;
+    }
+
+    console.log('Found image with storage path:', data.storage_path);
 
     // השגת ה-URL הציבורי של התמונה
     const { data: publicUrlData } = supabase.storage
       .from('images')
       .getPublicUrl(data.storage_path);
 
-    return publicUrlData?.publicUrl || null;
+    if (!publicUrlData || !publicUrlData.publicUrl) {
+      console.error('Failed to get public URL for image', data.storage_path);
+      return null;
+    }
+
+    console.log('Got public URL:', publicUrlData.publicUrl);
+    return publicUrlData.publicUrl;
   } catch (error) {
-    console.error('Error in fetchGemachImage:', error);
+    console.error('Exception in fetchGemachImage:', error);
     return null;
   }
 };
@@ -71,6 +87,7 @@ const GemachDetail = () => {
   const [gemach, setGemach] = useState<GemachData | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(true);
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
   
@@ -93,10 +110,17 @@ const GemachDetail = () => {
         
         if (data) {
           setGemach(data as GemachData);
-
+          
           // השגת תמונת הגמ״ח
+          setImageLoading(true);
           const imageUrl = await fetchGemachImage(id);
+          if (imageUrl) {
+            console.log('Setting image URL:', imageUrl);
+          } else {
+            console.log('No image URL found');
+          }
           setImageUrl(imageUrl);
+          setImageLoading(false);
         }
       } catch (error) {
         console.error('Error fetching gemach:', error);
@@ -179,13 +203,23 @@ const GemachDetail = () => {
             )}
           </div>
           
-          {/* תמונת הגמ״ח */}
-          {imageUrl ? (
+          {/* תמונת הגמ״ח - עם טיפול משופר במקרה של טעינה */}
+          {imageLoading ? (
+            <div className="w-full h-64 bg-gray-100 flex items-center justify-center">
+              <div className="w-8 h-8 border-t-2 border-primary border-solid rounded-full animate-spin"></div>
+            </div>
+          ) : imageUrl ? (
             <div className="w-full h-64 md:h-96 overflow-hidden">
               <img 
                 src={imageUrl} 
-                alt={gemach.name} 
+                alt={gemach?.name} 
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error('Image failed to load:', imageUrl);
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null; // Prevent infinite loop
+                  target.src = '/placeholder.svg'; // Use placeholder
+                }}
               />
             </div>
           ) : (
