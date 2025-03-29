@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MapPin, Clock, Phone, Info, X, Loader2 } from 'lucide-react';
+import { Search, MapPin, Clock, Phone, Info, X, Loader2, Mail, LinkIcon, FacebookIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
@@ -297,9 +297,9 @@ const Index = () => {
       
       <Footer />
 
-      {/* Gemach Details Dialog */}
+      {/* Gemach Details Dialog - מציג את כל המידע של הגמח */}
       <Dialog open={!!selectedGemach} onOpenChange={(open) => !open && setSelectedGemach(null)}>
-        <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden max-h-[90vh] overflow-y-auto">
           {selectedGemach && (
             <>
               <div className="relative h-52 overflow-hidden">
@@ -339,29 +339,102 @@ const Index = () => {
                 </DialogHeader>
                 
                 <div className="space-y-4">
+                  {/* כתובת */}
                   <div className="flex items-start gap-3">
                     <MapPin className="h-5 w-5 mt-0.5 text-gray-500 flex-shrink-0" />
                     <div>
                       <p className="font-medium">כתובת</p>
                       <p className="text-gray-700">{selectedGemach.address}</p>
                       <p className="text-gray-700">{selectedGemach.neighborhood}, ירושלים</p>
+                      {selectedGemach.location_instructions && (
+                        <p className="text-gray-700 mt-1">{selectedGemach.location_instructions}</p>
+                      )}
                     </div>
                   </div>
                   
+                  {/* טלפון */}
                   <div className="flex items-start gap-3">
                     <Phone className="h-5 w-5 mt-0.5 text-gray-500 flex-shrink-0" />
                     <div>
                       <p className="font-medium">טלפון</p>
-                      <p className="text-gray-700">{selectedGemach.phone}</p>
+                      <p className="text-gray-700">
+                        <a href={`tel:${selectedGemach.phone}`} className="text-primary hover:underline">
+                          {selectedGemach.phone}
+                        </a>
+                      </p>
+                      {selectedGemach.manager_phone && (
+                        <p className="text-gray-700">
+                          <a href={`tel:${selectedGemach.manager_phone}`} className="text-primary hover:underline">
+                            {selectedGemach.manager_phone} (מנהל)
+                          </a>
+                        </p>
+                      )}
                     </div>
                   </div>
                   
+                  {/* אימייל */}
+                  {selectedGemach.email && (
+                    <div className="flex items-start gap-3">
+                      <Mail className="h-5 w-5 mt-0.5 text-gray-500 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">אימייל</p>
+                        <p className="text-gray-700">
+                          <a href={`mailto:${selectedGemach.email}`} className="text-primary hover:underline">
+                            {selectedGemach.email}
+                          </a>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* שעות פעילות */}
                   <div className="flex items-start gap-3">
                     <Clock className="h-5 w-5 mt-0.5 text-gray-500 flex-shrink-0" />
                     <div>
                       <p className="font-medium">שעות פעילות</p>
                       <p className="text-gray-700">{selectedGemach.hours}</p>
                     </div>
+                  </div>
+                  
+                  {/* פרטי תשלום */}
+                  {selectedGemach.has_fee && selectedGemach.fee_details && (
+                    <div className="flex items-start gap-3">
+                      <Info className="h-5 w-5 mt-0.5 text-gray-500 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">פרטי תשלום</p>
+                        <p className="text-gray-700">{selectedGemach.fee_details}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* קישורים */}
+                  <div className="space-y-2">
+                    {selectedGemach.website_url && (
+                      <div className="flex items-center gap-2">
+                        <LinkIcon className="h-4 w-4 text-gray-500" />
+                        <a 
+                          href={selectedGemach.website_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          אתר אינטרנט
+                        </a>
+                      </div>
+                    )}
+                    {selectedGemach.facebook_url && (
+                      <div className="flex items-center gap-2">
+                        <FacebookIcon className="h-4 w-4 text-gray-500" />
+                        <a 
+                          href={selectedGemach.facebook_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          דף פייסבוק
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
