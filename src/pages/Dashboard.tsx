@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -385,7 +386,7 @@ const Dashboard = () => {
 
     try {
       setIsProcessing(true);
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('profiles')
         .update({ is_admin: false })
         .eq('id', userId);
@@ -606,7 +607,7 @@ const Dashboard = () => {
                                             <Input 
                                               id="address" 
                                               value={editGemach.address} 
-                                              onChange={(e) => setEditGemach({...editGemach, address: e.target.value})} 
+                                              onChange={(e) => setEditGemach({...editGemach, address: e.target.value})}
                                             />
                                           </div>
                                           <div>
@@ -614,7 +615,7 @@ const Dashboard = () => {
                                             <Input 
                                               id="phone" 
                                               value={editGemach.phone} 
-                                              onChange={(e) => setEditGemach({...editGemach, phone: e.target.value})} 
+                                              onChange={(e) => setEditGemach({...editGemach, phone: e.target.value})}
                                             />
                                           </div>
                                           <div>
@@ -622,7 +623,7 @@ const Dashboard = () => {
                                             <Input 
                                               id="hours" 
                                               value={editGemach.hours} 
-                                              onChange={(e) => setEditGemach({...editGemach, hours: e.target.value})} 
+                                              onChange={(e) => setEditGemach({...editGemach, hours: e.target.value})}
                                             />
                                           </div>
                                         </div>
@@ -849,4 +850,191 @@ const Dashboard = () => {
                                             <Input 
                                               id="address" 
                                               value={editGemach.address} 
-                                              onChange={(e) =>
+                                              onChange={(e) => setEditGemach({...editGemach, address: e.target.value})} 
+                                            />
+                                          </div>
+                                          <div>
+                                            <Label htmlFor="phone">טלפון</Label>
+                                            <Input 
+                                              id="phone" 
+                                              value={editGemach.phone} 
+                                              onChange={(e) => setEditGemach({...editGemach, phone: e.target.value})} 
+                                            />
+                                          </div>
+                                          <div>
+                                            <Label htmlFor="hours">שעות פעילות</Label>
+                                            <Input 
+                                              id="hours" 
+                                              value={editGemach.hours} 
+                                              onChange={(e) => setEditGemach({...editGemach, hours: e.target.value})} 
+                                            />
+                                          </div>
+                                        </div>
+                                        <DialogFooter>
+                                          <Button 
+                                            variant="outline" 
+                                            onClick={() => setEditGemach(null)}
+                                            disabled={isProcessing}
+                                          >
+                                            ביטול
+                                          </Button>
+                                          <Button 
+                                            onClick={() => handleUpdate(editGemach)}
+                                            disabled={isProcessing}
+                                          >
+                                            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                            שמור שינויים
+                                          </Button>
+                                        </DialogFooter>
+                                      </DialogContent>
+                                    )}
+                                  </Dialog>
+
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => navigate(`/gemach/${gemach.id}`)}
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    צפה
+                                  </Button>
+                                  
+                                  <Button 
+                                    variant="default" 
+                                    size="sm" 
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => handleApproval(gemach.id, true)}
+                                    disabled={isProcessing}
+                                  >
+                                    <Check className="h-4 w-4 mr-2" />
+                                    אשר
+                                  </Button>
+                                  
+                                  <Button 
+                                    variant="destructive" 
+                                    size="sm"
+                                    onClick={() => handleApproval(gemach.id, false)}
+                                    disabled={isProcessing}
+                                  >
+                                    <X className="h-4 w-4 mr-2" />
+                                    דחה
+                                  </Button>
+                                </CardFooter>
+                              </Card>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-10">
+                            <CheckIcon className="mx-auto h-12 w-12 text-green-500 mb-4" />
+                            <h3 className="text-lg font-medium mb-2">אין גמ״חים הממתינים לאישור</h3>
+                            <p className="text-gray-500">כל הגמ״חים אושרו. מצבור תודות בדרך אליך!</p>
+                          </div>
+                        )}
+                      </TabsContent>
+                    )}
+                    
+                    {isAdmin && (
+                      <TabsContent value="admins">
+                        <div className="space-y-6">
+                          <div className="bg-white p-6 rounded-lg shadow-sm">
+                            <h3 className="text-lg font-medium mb-4">הוסף מנהל חדש</h3>
+                            <div className="flex gap-2">
+                              <Input 
+                                placeholder="הכנס כתובת אימייל" 
+                                value={newAdminEmail}
+                                onChange={(e) => setNewAdminEmail(e.target.value)}
+                                className="flex-1"
+                              />
+                              <Button 
+                                onClick={handleAddAdmin}
+                                disabled={isProcessing}
+                              >
+                                {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                הוסף מנהל
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <h3 className="text-lg font-medium mb-4">רשימת מנהלים</h3>
+                            {isUsersLoading ? (
+                              <div className="flex justify-center items-center py-10">
+                                <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
+                                <span className="mr-2">טוען רשימת מנהלים...</span>
+                              </div>
+                            ) : adminUsers.length > 0 ? (
+                              <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                                <table className="w-full">
+                                  <thead>
+                                    <tr className="bg-gray-50 border-b">
+                                      <th className="py-3 px-6 text-right">שם</th>
+                                      <th className="py-3 px-6 text-right">אימייל</th>
+                                      <th className="py-3 px-6 text-right">תאריך הוספה</th>
+                                      <th className="py-3 px-6 text-center">פעולות</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {adminUsers.map((admin) => (
+                                      <tr key={admin.id} className="border-b hover:bg-gray-50">
+                                        <td className="py-3 px-6">{admin.display_name || 'לא צוין'}</td>
+                                        <td className="py-3 px-6">{admin.email}</td>
+                                        <td className="py-3 px-6">{admin.created_at}</td>
+                                        <td className="py-3 px-6 text-center">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                            onClick={() => handleRemoveAdmin(admin.id, admin.email)}
+                                            disabled={isProcessing || admin.email === user?.email}
+                                          >
+                                            <Trash2 className="h-4 w-4 mr-1" />
+                                            הסר הרשאות
+                                          </Button>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ) : (
+                              <div className="text-center py-10 bg-white rounded-lg shadow-sm">
+                                <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                                <h3 className="text-lg font-medium mb-2">אין מנהלים נוספים</h3>
+                                <p className="text-gray-500">הוסף מנהלים חדשים למערכת באמצעות הטופס למעלה</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </TabsContent>
+                    )}
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </main>
+      
+      <Footer />
+    </div>
+  );
+};
+
+// Simple check icon component for empty states
+const CheckIcon = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <polyline points="22 4 12 14.01 9 11.01" />
+  </svg>
+);
+
+export default Dashboard;
