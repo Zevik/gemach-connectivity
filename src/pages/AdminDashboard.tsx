@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -23,7 +24,7 @@ interface Gemach {
 }
 
 const AdminDashboard = () => {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [pendingGemachs, setPendingGemachs] = useState<Gemach[]>([]);
   const [approvedGemachs, setApprovedGemachs] = useState<Gemach[]>([]);
@@ -177,12 +178,12 @@ const AdminDashboard = () => {
   };
 
   // אם המשתמש לא מחובר, הפנה אותו לדף ההתחברות
-  if (!isLoading && !user) {
+  if (!loading && !user) {
     return <Navigate to="/auth" replace />;
   }
 
   // אם המשתמש לא מנהל, הפנה אותו לדף הראשי
-  if (!isLoading && user && !isAdmin) {
+  if (!loading && user && !isAdmin) {
     return (
       <div className="container mx-auto px-4 py-8 text-center" dir="rtl">
         <AlertTriangle className="mx-auto h-16 w-16 text-yellow-500 mb-4" />
@@ -193,7 +194,7 @@ const AdminDashboard = () => {
     );
   }
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="w-16 h-16 border-t-4 border-primary border-solid rounded-full animate-spin"></div>
