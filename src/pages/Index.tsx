@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -139,6 +138,7 @@ const Index = () => {
   };
 
   const handleGemachClick = (gemachId: string) => {
+    // Direct navigation to the full gemach page
     navigate(`/gemach/${gemachId}`);
   };
 
@@ -245,7 +245,7 @@ const Index = () => {
                     <Card 
                       key={gemach.id} 
                       className="overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer"
-                      onClick={() => handleGemachClick(gemach.id)}
+                      onClick={() => handleGemachClick(gemach.id)}  // This is the primary change
                     >
                       <div className="relative h-48 overflow-hidden">
                         {imageLoadingStates[gemach.id] ? (
