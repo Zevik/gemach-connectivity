@@ -4,13 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MapPin, Clock, Phone, Info, X, Loader2, Mail, LinkIcon, FacebookIcon } from 'lucide-react';
+import { Search, MapPin, Clock, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { neighborhoods, categories } from '@/data/constants';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/components/ui/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -65,7 +64,6 @@ const Index = () => {
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [gemachs, setGemachs] = useState<any[]>([]);
-  const [selectedGemach, setSelectedGemach] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
 
@@ -138,6 +136,10 @@ const Index = () => {
 
   const navigateToRegister = () => {
     navigate(user ? '/register-gemach' : '/auth');
+  };
+
+  const handleGemachClick = (gemachId: string) => {
+    navigate(`/gemach/${gemachId}`);
   };
 
   const filteredGemachs = gemachs.filter(gemach => {
@@ -243,7 +245,7 @@ const Index = () => {
                     <Card 
                       key={gemach.id} 
                       className="overflow-hidden hover:shadow-lg transition-shadow duration-200 cursor-pointer"
-                      onClick={() => setSelectedGemach(gemach)}
+                      onClick={() => handleGemachClick(gemach.id)}
                     >
                       <div className="relative h-48 overflow-hidden">
                         {imageLoadingStates[gemach.id] ? (
@@ -296,158 +298,6 @@ const Index = () => {
       </main>
       
       <Footer />
-
-      {/* Gemach Details Dialog - מציג את כל המידע של הגמח */}
-      <Dialog open={!!selectedGemach} onOpenChange={(open) => !open && setSelectedGemach(null)}>
-        <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden max-h-[90vh] overflow-y-auto">
-          {selectedGemach && (
-            <>
-              <div className="relative h-52 overflow-hidden">
-                {selectedGemach.image_url ? (
-                  <img 
-                    src={selectedGemach.image_url} 
-                    alt={selectedGemach.name} 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.error('Failed to load dialog image:', selectedGemach.image_url);
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null; // Prevent infinite loop
-                      target.src = '/placeholder.svg'; // Use placeholder
-                    }}
-                  />
-                ) : (
-                  <div className="h-full bg-gray-100 flex items-center justify-center">
-                    <p className="text-gray-500">אין תמונה זמינה</p>
-                  </div>
-                )}
-                <div className="absolute top-3 right-3">
-                  <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">
-                    {selectedGemach.category}
-                  </span>
-                </div>
-                <DialogClose className="absolute top-2 left-2 rounded-full h-8 w-8 flex items-center justify-center bg-gray-800 bg-opacity-60 text-white hover:bg-opacity-80">
-                  <X className="h-5 w-5" />
-                </DialogClose>
-              </div>
-              
-              <div className="p-6">
-                <DialogHeader>
-                  <DialogTitle className="text-2xl font-bold mb-2">{selectedGemach.name}</DialogTitle>
-                  <DialogDescription className="text-gray-600 mb-4">
-                    {selectedGemach.description}
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="space-y-4">
-                  {/* כתובת */}
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 mt-0.5 text-gray-500 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium">כתובת</p>
-                      <p className="text-gray-700">{selectedGemach.address}</p>
-                      <p className="text-gray-700">{selectedGemach.neighborhood}, ירושלים</p>
-                      {selectedGemach.location_instructions && (
-                        <p className="text-gray-700 mt-1">{selectedGemach.location_instructions}</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* טלפון */}
-                  <div className="flex items-start gap-3">
-                    <Phone className="h-5 w-5 mt-0.5 text-gray-500 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium">טלפון</p>
-                      <p className="text-gray-700">
-                        <a href={`tel:${selectedGemach.phone}`} className="text-primary hover:underline">
-                          {selectedGemach.phone}
-                        </a>
-                      </p>
-                      {selectedGemach.manager_phone && (
-                        <p className="text-gray-700">
-                          <a href={`tel:${selectedGemach.manager_phone}`} className="text-primary hover:underline">
-                            {selectedGemach.manager_phone} (מנהל)
-                          </a>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* אימייל */}
-                  {selectedGemach.email && (
-                    <div className="flex items-start gap-3">
-                      <Mail className="h-5 w-5 mt-0.5 text-gray-500 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">אימייל</p>
-                        <p className="text-gray-700">
-                          <a href={`mailto:${selectedGemach.email}`} className="text-primary hover:underline">
-                            {selectedGemach.email}
-                          </a>
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* שעות פעילות */}
-                  <div className="flex items-start gap-3">
-                    <Clock className="h-5 w-5 mt-0.5 text-gray-500 flex-shrink-0" />
-                    <div>
-                      <p className="font-medium">שעות פעילות</p>
-                      <p className="text-gray-700">{selectedGemach.hours}</p>
-                    </div>
-                  </div>
-                  
-                  {/* פרטי תשלום */}
-                  {selectedGemach.has_fee && selectedGemach.fee_details && (
-                    <div className="flex items-start gap-3">
-                      <Info className="h-5 w-5 mt-0.5 text-gray-500 flex-shrink-0" />
-                      <div>
-                        <p className="font-medium">פרטי תשלום</p>
-                        <p className="text-gray-700">{selectedGemach.fee_details}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* קישורים */}
-                  <div className="space-y-2">
-                    {selectedGemach.website_url && (
-                      <div className="flex items-center gap-2">
-                        <LinkIcon className="h-4 w-4 text-gray-500" />
-                        <a 
-                          href={selectedGemach.website_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          אתר אינטרנט
-                        </a>
-                      </div>
-                    )}
-                    {selectedGemach.facebook_url && (
-                      <div className="flex items-center gap-2">
-                        <FacebookIcon className="h-4 w-4 text-gray-500" />
-                        <a 
-                          href={selectedGemach.facebook_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          דף פייסבוק
-                        </a>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="mt-6 flex justify-end">
-                  <Button onClick={() => navigate(`/gemach/${selectedGemach.id}`)}>
-                    צפייה בעמוד הגמ״ח
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
