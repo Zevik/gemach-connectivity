@@ -9,7 +9,6 @@ import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
 import Auth from "@/pages/Auth";
 import AuthCallback from "@/pages/AuthCallback";
-import AdminDashboard from "@/pages/AdminDashboard";
 import Dashboard from "@/pages/Dashboard";
 import GemachDetail from "@/pages/GemachDetail";
 import EditGemach from "@/pages/EditGemach";
@@ -49,34 +48,6 @@ const PrivateRoute = ({ children }: { children: ReactNode }) => {
   return user ? <>{children}</> : <Navigate to="/auth" replace />;
 };
 
-// הגנה על נתיבי מנהל - רק למנהלים
-const AdminRoute = ({ children }: { children: ReactNode }) => {
-  const { user, isAdmin, loading } = useAuth();
-  const [isChecking, setIsChecking] = useState(true);
-  
-  useEffect(() => {
-    // נמתין לבדיקת האימות לפני שנחליט אם להציג את התוכן או להפנות לדף הבית
-    const checkAdmin = async () => {
-      if (!loading) {
-        setIsChecking(false);
-      }
-    };
-    
-    checkAdmin();
-  }, [loading]);
-  
-  if (isChecking) {
-    // מציג מסך טעינה עד שהאימות נבדק
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="w-16 h-16 border-t-4 border-primary border-solid rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-  
-  return user && isAdmin ? <>{children}</> : <Navigate to="/" replace />;
-};
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -89,11 +60,6 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/admin" element={
-              <AdminRoute>
-                <AdminDashboard />
-              </AdminRoute>
-            } />
             <Route path="/dashboard" element={
               <PrivateRoute>
                 <Dashboard />
@@ -112,6 +78,9 @@ const App = () => (
             } />
             <Route path="/registration-success" element={<RegistrationSuccess />} />
             <Route path="/about" element={<About />} />
+            
+            {/* Redirect old admin path to dashboard */}
+            <Route path="/admin" element={<Navigate to="/dashboard" replace />} />
             
             {/* Fallback route */}
             <Route path="*" element={<NotFound />} />
