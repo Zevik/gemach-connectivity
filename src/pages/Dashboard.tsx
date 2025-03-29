@@ -46,7 +46,7 @@ interface PendingGemach extends UserGemach {
 interface AdminUser {
   id: string;
   email: string;
-  full_name?: string;
+  display_name?: string;
   is_admin: boolean;
   created_at: string;
 }
@@ -84,7 +84,7 @@ const Dashboard = () => {
         if (error) throw error;
 
         // המרת הנתונים למבנה שימושי יותר
-        const formattedData = data?.map(item => ({
+        const formattedData: UserGemach[] = data?.map(item => ({
           id: item.id,
           name: item.name,
           description: item.description,
@@ -93,7 +93,6 @@ const Dashboard = () => {
           neighborhood: item.neighborhood,
           phone: item.phone,
           hours: item.hours,
-          image_url: item.image_url,
           status: item.is_approved === true ? 'approved' : item.is_approved === false ? 'rejected' : 'pending',
           created_at: new Date(item.created_at).toLocaleDateString('he-IL')
         })) || [];
@@ -129,7 +128,7 @@ const Dashboard = () => {
         if (gemachsError) throw gemachsError;
 
         // המרת הנתונים למבנה שימושי יותר
-        const formattedData = gemachsData?.map(item => ({
+        const formattedData: PendingGemach[] = gemachsData?.map(item => ({
           id: item.id,
           name: item.name,
           description: item.description,
@@ -138,8 +137,7 @@ const Dashboard = () => {
           neighborhood: item.neighborhood,
           phone: item.phone,
           hours: item.hours,
-          image_url: item.image_url,
-          user_email: item.owner_email || "לא ידוע", // אנחנו לא צריכים את profiles
+          user_email: item.email || "לא ידוע",
           status: item.is_approved === false ? 'rejected' : 'pending',
           created_at: new Date(item.created_at).toLocaleDateString('he-IL')
         })) || [];
@@ -169,10 +167,10 @@ const Dashboard = () => {
         
         if (error) throw error;
 
-        const formattedData = data?.map(item => ({
+        const formattedData: AdminUser[] = data?.map(item => ({
           id: item.id,
-          email: item.email,
-          full_name: item.full_name,
+          email: item.email || '',
+          display_name: item.display_name,
           is_admin: item.is_admin,
           created_at: new Date(item.created_at).toLocaleDateString('he-IL')
         })) || [];
@@ -319,44 +317,54 @@ const Dashboard = () => {
 
     try {
       setIsProcessing(true);
-      const { data, error } = await supabase.rpc('set_user_admin', {
-        user_email: newAdminEmail,
-        admin_status: true
-      });
-
-      if (error) throw error;
-
-      if (data) {
-        toast({
-          title: "הרשאות מנהל הוקצו בהצלחה",
-          description: `המשתמש ${newAdminEmail} קיבל הרשאות מנהל`,
-        });
+      
+      // Using a direct update instead of RPC since the function doesn't exist
+      const { data: userData, error: userError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', newAdminEmail)
+        .single();
         
-        // רענון רשימת המנהלים
-        const { data: newAdminData, error: fetchError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('email', newAdminEmail)
-          .single();
-        
-        if (!fetchError && newAdminData) {
-          setAdminUsers(prev => [...prev, {
-            id: newAdminData.id,
-            email: newAdminData.email,
-            full_name: newAdminData.full_name,
-            is_admin: newAdminData.is_admin,
-            created_at: new Date(newAdminData.created_at).toLocaleDateString('he-IL')
-          }]);
-        }
-        
-        setNewAdminEmail('');
-      } else {
+      if (userError) {
         toast({
           variant: "destructive",
-          title: "לא ניתן להוסיף הרשאות מנהל",
-          description: "המשתמש לא נמצא או שאין לך הרשאות מספיקות",
+          title: "משתמש לא נמצא",
+          description: "לא נמצא משתמש עם כתובת האימייל הזו",
         });
+        return;
       }
+      
+      // Update the user's admin status
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ is_admin: true })
+        .eq('id', userData.id);
+        
+      if (updateError) throw updateError;
+
+      toast({
+        title: "הרשאות מנהל הוקצו בהצלחה",
+        description: `המשתמש ${newAdminEmail} קיבל הרשאות מנהל`,
+      });
+      
+      // רענון רשימת המנהלים
+      const { data: newAdminData, error: fetchError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('email', newAdminEmail)
+        .single();
+      
+      if (!fetchError && newAdminData) {
+        setAdminUsers(prev => [...prev, {
+          id: newAdminData.id,
+          email: newAdminData.email || '',
+          display_name: newAdminData.display_name,
+          is_admin: newAdminData.is_admin,
+          created_at: new Date(newAdminData.created_at).toLocaleDateString('he-IL')
+        }]);
+      }
+      
+      setNewAdminEmail('');
     } catch (error: any) {
       console.error('Error adding admin user:', error);
       toast({
@@ -841,154 +849,4 @@ const Dashboard = () => {
                                             <Input 
                                               id="address" 
                                               value={editGemach.address} 
-                                              onChange={(e) => setEditGemach({...editGemach, address: e.target.value})} 
-                                            />
-                                          </div>
-                                          <div>
-                                            <Label htmlFor="phone">טלפון</Label>
-                                            <Input 
-                                              id="phone" 
-                                              value={editGemach.phone} 
-                                              onChange={(e) => setEditGemach({...editGemach, phone: e.target.value})} 
-                                            />
-                                          </div>
-                                          <div>
-                                            <Label htmlFor="hours">שעות פעילות</Label>
-                                            <Input 
-                                              id="hours" 
-                                              value={editGemach.hours} 
-                                              onChange={(e) => setEditGemach({...editGemach, hours: e.target.value})} 
-                                            />
-                                          </div>
-                                        </div>
-                                        <DialogFooter>
-                                          <Button 
-                                            variant="outline" 
-                                            onClick={() => setEditGemach(null)}
-                                            disabled={isProcessing}
-                                          >
-                                            ביטול
-                                          </Button>
-                                          <Button 
-                                            onClick={() => handleUpdate(editGemach)}
-                                            disabled={isProcessing}
-                                          >
-                                            {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                                            שמור שינויים
-                                          </Button>
-                                        </DialogFooter>
-                                      </DialogContent>
-                                    )}
-                                  </Dialog>
-                                  
-                                  <Button 
-                                    variant="outline" 
-                                    className="text-red-500"
-                                    onClick={() => handleApproval(gemach.id, false)}
-                                    disabled={isProcessing}
-                                  >
-                                    <X className="h-4 w-4 mr-2" />
-                                    דחה
-                                  </Button>
-                                  <Button 
-                                    className="bg-green-600 hover:bg-green-700"
-                                    onClick={() => handleApproval(gemach.id, true)}
-                                    disabled={isProcessing}
-                                  >
-                                    <Check className="h-4 w-4 mr-2" />
-                                    אשר
-                                  </Button>
-                                </CardFooter>
-                              </Card>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-center py-10">
-                            <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                            <h3 className="text-lg font-medium mb-2">אין גמ״חים הממתינים לאישור</h3>
-                            <p className="text-gray-500">כל הגמ״חים אושרו או נדחו</p>
-                          </div>
-                        )}
-                      </TabsContent>
-                    )}
-
-                    {isAdmin && (
-                      <TabsContent value="admins">
-                        <Card className="mb-4">
-                          <CardHeader>
-                            <CardTitle className="text-lg">הוספת מנהל חדש</CardTitle>
-                            <CardDescription>הוסף משתמש קיים כמנהל מערכת</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex space-x-2">
-                              <Input 
-                                placeholder="הכנס אימייל של משתמש קיים" 
-                                value={newAdminEmail} 
-                                onChange={(e) => setNewAdminEmail(e.target.value)} 
-                                dir="ltr"
-                                className="flex-1"
-                              />
-                              <Button 
-                                onClick={handleAddAdmin} 
-                                disabled={isProcessing || !newAdminEmail}
-                              >
-                                {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-                                הוסף מנהל
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-
-                        <h3 className="font-medium text-lg mb-4">מנהלי מערכת קיימים</h3>
-                        
-                        {isUsersLoading ? (
-                          <div className="flex justify-center items-center py-10">
-                            <Loader2 className="h-8 w-8 animate-spin text-sky-600" />
-                            <span className="mr-2">טוען רשימת מנהלים...</span>
-                          </div>
-                        ) : adminUsers.length > 0 ? (
-                          <div className="space-y-2">
-                            {adminUsers.map((admin) => (
-                              <Card key={admin.id}>
-                                <CardContent className="p-4 flex justify-between items-center">
-                                  <div>
-                                    <p className="font-medium">{admin.full_name || 'ללא שם'}</p>
-                                    <p className="text-sm text-gray-500">{admin.email}</p>
-                                    <p className="text-xs text-gray-400">נוצר: {admin.created_at}</p>
-                                  </div>
-                                  <Button 
-                                    variant="outline" 
-                                    className="text-red-500"
-                                    size="sm"
-                                    onClick={() => handleRemoveAdmin(admin.id, admin.email)}
-                                    disabled={isProcessing || admin.email === 'zaviner@gmail.com'} // מונע הסרת המנהל הראשי
-                                  >
-                                    הסר הרשאות
-                                  </Button>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="text-center py-10">
-                            <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                            <h3 className="text-lg font-medium mb-2">אין מנהלי מערכת</h3>
-                            <p className="text-gray-500">הוסף מנהל מערכת ראשון כדי לאפשר ניהול של האתר</p>
-                          </div>
-                        )}
-                      </TabsContent>
-                    )}
-                  </Tabs>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <Footer />
-    </div>
-  );
-};
-
-export default Dashboard; 
+                                              onChange={(e) =>

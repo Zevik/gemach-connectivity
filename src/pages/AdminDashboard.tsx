@@ -80,7 +80,21 @@ const AdminDashboard = () => {
         return;
       }
       
-      setPendingGemachs(data || []);
+      // Transform data to match the Gemach interface
+      const formattedData: Gemach[] = (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        category: item.category || '',
+        description: item.description || '',
+        phone: item.phone || '',
+        created_at: item.created_at || '',
+        owner_email: item.email || null,
+        is_approved: item.is_approved,
+        is_deleted: false,
+        deleted_at: null
+      }));
+      
+      setPendingGemachs(formattedData);
     } catch (error) {
       console.error('Error fetching pending gemachs:', error);
     } finally {
@@ -108,7 +122,21 @@ const AdminDashboard = () => {
         return;
       }
       
-      setApprovedGemachs(data || []);
+      // Transform data to match the Gemach interface
+      const formattedData: Gemach[] = (data || []).map(item => ({
+        id: item.id,
+        name: item.name,
+        category: item.category || '',
+        description: item.description || '',
+        phone: item.phone || '',
+        created_at: item.created_at || '',
+        owner_email: item.email || null,
+        is_approved: item.is_approved,
+        is_deleted: false,
+        deleted_at: null
+      }));
+      
+      setApprovedGemachs(formattedData);
     } catch (error) {
       console.error('Error fetching approved gemachs:', error);
     } finally {
