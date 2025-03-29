@@ -16,16 +16,15 @@ interface Gemach {
   description: string;
   phone: string;
   created_at: string;
-  owner_email: string | null;
+  email: string | null;
   is_approved: boolean | null;
-  is_deleted: boolean | null;
-  deleted_at: string | null;
+  is_deleted?: boolean | null;
+  deleted_at?: string | null;
   // Additional fields to match the data structure
   address: string;
   neighborhood: string;
   location_instructions: string | null;
   manager_phone: string | null;
-  email: string | null;
   hours: string;
   has_fee: boolean;
   fee_details: string | null;
@@ -103,10 +102,9 @@ const AdminDashboard = () => {
           description: item.description,
           phone: item.phone,
           created_at: item.created_at,
-          owner_email: item.owner_email ?? null,
           is_approved: item.is_approved,
-          is_deleted: false, // Default value since it might not be in the response
-          deleted_at: null,  // Default value since it might not be in the response
+          is_deleted: false, // Default value
+          deleted_at: null,  // Default value
           address: item.address,
           neighborhood: item.neighborhood,
           location_instructions: item.location_instructions,
@@ -160,10 +158,9 @@ const AdminDashboard = () => {
           description: item.description,
           phone: item.phone,
           created_at: item.created_at,
-          owner_email: item.owner_email ?? null,
           is_approved: item.is_approved,
-          is_deleted: false, // Default value since it might not be in the response
-          deleted_at: null,  // Default value since it might not be in the response
+          is_deleted: false, // Default value
+          deleted_at: null,  // Default value
           address: item.address,
           neighborhood: item.neighborhood,
           location_instructions: item.location_instructions,
@@ -319,7 +316,7 @@ const AdminDashboard = () => {
                         <TableRow key={gemach.id}>
                           <TableCell className="font-medium">{gemach.name}</TableCell>
                           <TableCell>{gemach.category}</TableCell>
-                          <TableCell>{gemach.owner_email || 'לא ידוע'}</TableCell>
+                          <TableCell>{gemach.email || 'לא ידוע'}</TableCell>
                           <TableCell>{new Date(gemach.created_at).toLocaleDateString('he-IL')}</TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
@@ -396,7 +393,7 @@ const AdminDashboard = () => {
                         <TableRow key={gemach.id}>
                           <TableCell className="font-medium">{gemach.name}</TableCell>
                           <TableCell>{gemach.category}</TableCell>
-                          <TableCell>{gemach.owner_email || 'לא ידוע'}</TableCell>
+                          <TableCell>{gemach.email || 'לא ידוע'}</TableCell>
                           <TableCell>{new Date(gemach.created_at).toLocaleDateString('he-IL')}</TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
