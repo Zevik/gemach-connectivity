@@ -87,34 +87,6 @@ const RegisterGemach = () => {
     try {
       console.log("User is logged in:", user);
       
-      // העלאת התמונה לאחסון של Supabase
-      let imageUrl = null;
-      let filePath = null;
-      if (selectedFiles.length > 0) {
-        const file = selectedFiles[0];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-        filePath = `gemach_images/${fileName}`;
-        
-        console.log("Uploading image:", filePath);
-        
-        const { error: uploadError, data: uploadData } = await supabase.storage
-          .from('images')
-          .upload(filePath, file);
-          
-        if (uploadError) {
-          console.error('Image upload error:', uploadError);
-        } else if (uploadData) {
-          // יצירת URL ציבורי לתמונה
-          const { data: { publicUrl } } = supabase.storage
-            .from('images')
-            .getPublicUrl(filePath);
-            
-          imageUrl = publicUrl;
-          console.log("Image uploaded successfully:", imageUrl);
-        }
-      }
-      
       // יצירת אובייקט שמותאם בדיוק לשמות השדות בטבלה - חשוב!
       // שימוש באובייקט בייצור ידני ולא הסתמכות על אובייקט data
       const gemachData = {
@@ -158,8 +130,29 @@ const RegisterGemach = () => {
         throw new Error('Failed to get gemach ID from registration');
       }
       
-      // אם יש תמונה, צריך לשמור אותה בטבלת gemach_images
-      if (imageUrl && filePath) {
+      // העלאת תמונה אם קיימת
+      if (selectedFiles.length > 0) {
+        const file = selectedFiles[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `${gemachId}/${fileName}`;
+        
+        console.log("Uploading image to bucket 'images':", filePath);
+        
+        // העלאת התמונה לאחסון
+        const { error: uploadError } = await supabase.storage
+          .from('images')
+          .upload(filePath, file);
+          
+        if (uploadError) {
+          console.error('Image upload error:', uploadError);
+          // נזרוק שגיאה רק אם העלאת התמונה נכשלה בגלל בעיה אחרת מלבד אם הקובץ כבר קיים
+          if (uploadError.message !== 'The resource already exists') {
+            throw new Error(`Failed to upload image: ${uploadError.message}`);
+          }
+        }
+        
+        // הוספת התמונה לטבלת gemach_images
         const { error: imageInsertError } = await supabase
           .from('gemach_images')
           .insert([{
@@ -171,6 +164,8 @@ const RegisterGemach = () => {
         if (imageInsertError) {
           console.error('Image reference insert error:', imageInsertError);
           // לא נזרוק שגיאה כאן כדי שהגמ״ח עדיין יירשם גם אם יש בעיה עם התמונה
+        } else {
+          console.log("Image reference stored successfully for gemach", gemachId);
         }
       }
       

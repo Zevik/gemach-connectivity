@@ -1,543 +1,310 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { MapPin, Phone, Clock, Mail, Globe, Facebook, ChevronLeft, Share2, AlertTriangle, CheckCircle, XCircle, Edit, Trash2, RefreshCcw } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 
-interface GemachImage {
-  id: string;
-  storage_path: string;
-  is_primary: boolean;
-  public_url?: string;
-}
+// הוספת פונקציה להשגת תמונת הגמ״ח
+import React, { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { 
+  PhoneIcon, 
+  MailIcon, 
+  ClockIcon, 
+  MapPinIcon, 
+  InfoIcon,
+  LinkIcon,
+  FacebookIcon,
+  PencilIcon
+} from "lucide-react";
 
-interface Gemach {
+interface GemachData {
   id: string;
   name: string;
   category: string;
-  description: string;
-  address: string;
   neighborhood: string;
-  location_instructions?: string;
+  address: string;
+  location_instructions: string | null;
   phone: string;
-  manager_phone?: string;
-  email?: string;
+  manager_phone: string | null;
+  email: string | null;
+  description: string;
   hours: string;
   has_fee: boolean;
-  fee_details?: string;
-  website_url?: string;
-  facebook_url?: string;
-  images?: GemachImage[];
+  fee_details: string | null;
+  website_url: string | null;
+  facebook_url: string | null;
+  owner_id: string | null;
   is_approved: boolean | null;
-  owner_id: string;
-  is_deleted?: boolean | null;
-  deleted_at?: string | null;
 }
+
+// פונקציה להשגת התמונה של הגמ״ח
+const fetchGemachImage = async (gemachId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('gemach_images')
+      .select('storage_path')
+      .eq('gemach_id', gemachId)
+      .eq('is_primary', true)
+      .single();
+
+    if (error || !data) {
+      console.error('Error fetching gemach image:', error);
+      return null;
+    }
+
+    // השגת ה-URL הציבורי של התמונה
+    const { data: publicUrlData } = supabase.storage
+      .from('images')
+      .getPublicUrl(data.storage_path);
+
+    return publicUrlData?.publicUrl || null;
+  } catch (error) {
+    console.error('Error in fetchGemachImage:', error);
+    return null;
+  }
+};
 
 const GemachDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const [gemach, setGemach] = useState<Gemach | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [gemach, setGemach] = useState<GemachData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const { toast } = useToast();
-  const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
-  const [isProcessing, setIsProcessing] = useState(false);
-
+  
   useEffect(() => {
     const fetchGemach = async () => {
       if (!id) return;
-
+      
       try {
-        // Fetch gemach details
-        const { data: gemachData, error: gemachError } = await supabase
+        setLoading(true);
+        
+        const { data, error } = await supabase
           .from('gemachs')
           .select('*')
           .eq('id', id)
           .single();
-
-        if (gemachError) throw gemachError;
-        
-        if (!gemachData) {
-          toast({
-            title: "הגמ\"ח לא נמצא",
-            description: "הגמ\"ח המבוקש לא נמצא במערכת",
-            variant: "destructive",
-          });
-          navigate('/gemachs');
-          return;
-        }
-
-        // בדיקה אם הגמ"ח מאושר לצפייה
-        if (gemachData.is_approved !== true && !isAdmin && user?.id !== gemachData.owner_id) {
-          toast({
-            title: "אין גישה לגמ\"ח זה",
-            description: "הגמ\"ח טרם אושר או נדחה על ידי מנהל המערכת",
-            variant: "destructive",
-          });
-          navigate('/gemachs');
-          return;
-        }
-
-        // Fetch gemach images
-        const { data: imagesData, error: imagesError } = await supabase
-          .from('gemach_images')
-          .select('*')
-          .eq('gemach_id', id)
-          .order('is_primary', { ascending: false });
-
-        if (imagesError) throw imagesError;
-
-        // Get public URLs for images
-        const imagesWithUrls = await Promise.all((imagesData || []).map(async (image) => {
-          const { data } = supabase.storage
-            .from('gemach-images')
-            .getPublicUrl(image.storage_path);
           
-          return {
-            ...image,
-            public_url: data.publicUrl
-          };
-        }));
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
+          setGemach(data as GemachData);
 
-        setGemach({
-          ...gemachData,
-          images: imagesWithUrls
-        });
+          // השגת תמונת הגמ״ח
+          const imageUrl = await fetchGemachImage(id);
+          setImageUrl(imageUrl);
+        }
       } catch (error) {
         console.error('Error fetching gemach:', error);
         toast({
-          title: "שגיאה בטעינת נתונים",
-          description: "אירעה שגיאה בעת טעינת פרטי הגמ\"ח",
-          variant: "destructive",
+          title: 'שגיאה בטעינת הנתונים',
+          description: 'לא ניתן היה לטעון את פרטי הגמ״ח. אנא נסו שנית מאוחר יותר.',
+          variant: 'destructive',
         });
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
-
+    
     fetchGemach();
-  }, [id, navigate, toast, isAdmin, user]);
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: gemach?.name || "מרכז הגמ\"חים",
-          text: `בוא לבקר בגמ\"ח ${gemach?.name}`,
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      // Fallback for browsers that don't support the Web Share API
-      navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: "הקישור הועתק",
-        description: "הקישור הועתק ללוח. עכשיו אפשר לשתף אותו!",
-      });
-    }
-  };
-
-  // פונקציה לאישור גמ"ח ישירות מדף הפרטים (למנהלים בלבד)
-  const handleApproval = async (approve: boolean) => {
-    if (!isAdmin || !gemach) return;
-    
-    try {
-      setIsProcessing(true);
-      const { error } = await supabase
-        .from('gemachs')
-        .update({ is_approved: approve })
-        .eq('id', gemach.id);
-
-      if (error) throw error;
-
-      // עדכון הגמ"ח המקומי
-      setGemach(prev => prev ? {...prev, is_approved: approve} : null);
-
-      toast({
-        title: approve ? "הגמ\"ח אושר בהצלחה" : "הגמ\"ח נדחה",
-        description: approve 
-          ? "הגמ\"ח אושר ויופיע כעת בתוצאות החיפוש" 
-          : "הגמ\"ח נדחה ולא יופיע בתוצאות החיפוש הציבוריות",
-      });
-    } catch (error) {
-      console.error('Error updating gemach approval:', error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה בעדכון סטטוס הגמ\"ח",
-        description: "אירעה שגיאה בעדכון סטטוס הגמ\"ח. אנא נסה שוב מאוחר יותר."
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleMoveToTrash = async () => {
-    if (!isAdmin || !gemach) return;
-    
-    if (!confirm("האם אתה בטוח שברצונך למחוק את הגמ\"ח? פעולה זו אינה ניתנת לביטול.")) {
-      return;
-    }
-    
-    try {
-      setIsProcessing(true);
-      // נשתמש במחיקה רגילה כי הסכימה עדיין לא עודכנה
-      const { error } = await supabase
-        .from('gemachs')
-        .delete()
-        .eq('id', gemach.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "הגמ\"ח נמחק בהצלחה",
-      });
-      
-      // נווט חזרה לדף הניהול
-      navigate('/admin');
-    } catch (error) {
-      console.error('Error deleting gemach:', error);
-      toast({
-        variant: "destructive",
-        title: "שגיאה במחיקת הגמ\"ח",
-        description: "אירעה שגיאה בעת מחיקת הגמ\"ח. אנא נסה שוב מאוחר יותר."
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  if (isLoading) {
+  }, [id]);
+  
+  const canEdit = user && gemach && (user.id === gemach.owner_id || isAdmin);
+  
+  if (loading) {
     return (
-      <div className="container mx-auto px-4 py-16 flex justify-center">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <Header />
+        
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="flex justify-center items-center h-64">
+            <div className="w-16 h-16 border-t-4 border-primary border-solid rounded-full animate-spin"></div>
+          </div>
+        </main>
+        
+        <Footer />
       </div>
     );
   }
-
+  
   if (!gemach) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center" dir="rtl">
-        <h1 className="text-2xl font-bold mb-4">הגמ״ח לא נמצא</h1>
-        <p className="mb-6">הגמ״ח המבוקש לא נמצא במערכת או שאינו זמין כרגע.</p>
-        <Button onClick={() => navigate('/gemachs')}>חזרה לרשימת הגמ״חים</Button>
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <Header />
+        
+        <main className="flex-1 container mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <h2 className="text-2xl font-bold mb-4">הגמ״ח לא נמצא</h2>
+            <p className="mb-6">הגמ״ח המבוקש אינו קיים או שאין לך הרשאות לצפות בו.</p>
+            <Button asChild>
+              <Link to="/">חזרה לדף הבית</Link>
+            </Button>
+          </div>
+        </main>
+        
+        <Footer />
       </div>
     );
   }
-
+  
   return (
-    <div className="container mx-auto px-4 py-8" dir="rtl">
-      <Button 
-        variant="ghost" 
-        className="mb-4 flex items-center" 
-        onClick={() => navigate(-1)}
-      >
-        <ChevronLeft className="mr-2 h-4 w-4" />
-        חזרה
-      </Button>
-
-      {/* הודעת סטטוס לגמ"ח לא מאושר */}
-      {gemach.is_approved !== true && (
-        <div className={`mb-6 p-4 rounded-lg ${
-          gemach.is_approved === false 
-            ? 'bg-red-50 border border-red-200' 
-            : 'bg-yellow-50 border border-yellow-200'
-        }`}>
-          <div className="flex items-center">
-            {gemach.is_approved === false ? (
-              <XCircle className="h-5 w-5 text-red-500 mr-2" />
-            ) : (
-              <AlertTriangle className="h-5 w-5 text-yellow-500 mr-2" />
-            )}
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Header />
+      
+      <main className="flex-1 container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
+          {/* כותרת עם כפתור עריכה */}
+          <div className="p-6 bg-primary text-white flex justify-between items-center">
             <div>
-              <h3 className="font-medium">
-                {gemach.is_approved === false 
-                  ? 'גמ"ח זה נדחה על ידי מנהל המערכת' 
-                  : 'גמ"ח זה ממתין לאישור מנהל'}
-              </h3>
-              <p className="text-sm mt-1">
-                {gemach.is_approved === false 
-                  ? 'גמ"ח זה לא יופיע בתוצאות החיפוש הציבוריות. ניתן לערוך אותו ולהגיש מחדש.' 
-                  : 'גמ"ח זה לא יופיע בתוצאות החיפוש הציבוריות עד לאישור מנהל המערכת.'}
+              <h1 className="text-3xl font-bold">{gemach.name}</h1>
+              <p className="text-sm mt-2 text-white/90">
+                {gemach.category} | {gemach.neighborhood}
               </p>
-              
-              {isAdmin && (
-                <div className="mt-3 flex space-x-2">
-                  <Button 
-                    size="sm" 
-                    className="bg-green-600 hover:bg-green-700"
-                    disabled={isProcessing || gemach.is_approved === true}
-                    onClick={() => handleApproval(true)}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-1" />
-                    אשר גמ"ח
-                  </Button>
-                  
-                  <Button 
-                    size="sm" 
-                    variant="destructive"
-                    disabled={isProcessing || gemach.is_approved === false}
-                    onClick={() => handleApproval(false)}
-                  >
-                    <XCircle className="h-4 w-4 mr-1" />
-                    דחה גמ"ח
-                  </Button>
-
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => navigate(`/gemach/${gemach.id}/edit`)}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    ערוך גמ"ח
-                  </Button>
-                </div>
-              )}
-              
-              {/* הוספת כפתור עריכה למשתמש שהוא בעל הגמ"ח אך לא מנהל */}
-              {!isAdmin && user && user.id === gemach.owner_id && (
-                <div className="mt-3">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => navigate(`/gemach/${gemach.id}/edit`)}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    ערוך גמ"ח
-                  </Button>
-                </div>
-              )}
             </div>
-          </div>
-        </div>
-      )}
-      
-      {/* תצוגת פעולות מנהל לגמ"ח מאושר */}
-      {isAdmin && gemach.is_approved === true && (
-        <div className="mb-6 p-4 rounded-lg bg-gray-50 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium">פעולות ניהול</h3>
-              <p className="text-sm text-gray-500">אפשרויות זמינות למנהלי מערכת בלבד</p>
-            </div>
-            <div className="flex gap-2">
+            {canEdit && (
               <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => navigate(`/gemach/${gemach.id}/edit`)}
+                variant="secondary"
+                size="sm"
+                asChild
               >
-                <Edit className="h-4 w-4 mr-1" />
-                ערוך גמ"ח
+                <Link to={`/gemach/${gemach.id}/edit`}>
+                  <PencilIcon className="h-4 w-4 ml-1" />
+                  עריכה
+                </Link>
               </Button>
-              
-              <Button 
-                size="sm" 
-                variant="destructive"
-                onClick={handleMoveToTrash}
-                disabled={isProcessing}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                מחק גמ"ח
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* הוספת כפתור עריכה למשתמש רגיל שהוא בעל הגמ"ח כאשר הגמ"ח מאושר */}
-      {!isAdmin && user && gemach.is_approved === true && user.id === gemach.owner_id && (
-        <div className="mb-6 p-4 rounded-lg bg-gray-50 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-medium">ניהול הגמ"ח שלי</h3>
-              <p className="text-sm text-gray-500">אפשרויות עריכה זמינות לך כבעל הגמ"ח</p>
-            </div>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => navigate(`/gemach/${gemach.id}/edit`)}
-            >
-              <Edit className="h-4 w-4 mr-1" />
-              ערוך גמ"ח
-            </Button>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main content */}
-        <div className="lg:col-span-2">
-          <h1 className="text-3xl font-bold mb-2">{gemach.name}</h1>
-          
-          <div className="flex flex-wrap gap-2 mb-4">
-            <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
-              {gemach.category}
-            </span>
-            <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm">
-              {gemach.neighborhood}
-            </span>
-            {gemach.has_fee && (
-              <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm">
-                בתשלום
-              </span>
             )}
           </div>
-
-          {/* Image gallery */}
-          {gemach.images && gemach.images.length > 0 ? (
-            <div className="mb-8">
-              <div className="relative h-80 bg-gray-100 rounded-lg overflow-hidden mb-2">
-                <img 
-                  src={gemach.images[activeImageIndex].public_url} 
-                  alt={gemach.name}
-                  className="w-full h-full object-cover" 
-                />
-              </div>
-              
-              {gemach.images.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto py-2">
-                  {gemach.images.map((image, index) => (
-                    <button 
-                      key={image.id}
-                      onClick={() => setActiveImageIndex(index)}
-                      className={`h-16 w-16 rounded overflow-hidden ${
-                        index === activeImageIndex ? 'ring-2 ring-primary' : ''
-                      }`}
-                    >
-                      <img 
-                        src={image.public_url} 
-                        alt={`תמונה ${index + 1}`}
-                        className="h-full w-full object-cover" 
-                      />
-                    </button>
-                  ))}
-                </div>
-              )}
+          
+          {/* תמונת הגמ״ח */}
+          {imageUrl ? (
+            <div className="w-full h-64 md:h-96 overflow-hidden">
+              <img 
+                src={imageUrl} 
+                alt={gemach.name} 
+                className="w-full h-full object-cover"
+              />
             </div>
           ) : (
-            <div className="h-60 bg-gray-100 rounded-lg mb-8 flex items-center justify-center">
-              <p className="text-gray-500">אין תמונות זמינות</p>
+            <div className="w-full h-64 bg-gray-100 flex items-center justify-center">
+              <p className="text-gray-500">אין תמונה זמינה</p>
             </div>
           )}
-
-          <h2 className="text-xl font-bold mb-2">אודות הגמ״ח</h2>
-          <p className="text-gray-700 mb-6 whitespace-pre-line">
-            {gemach.description}
-          </p>
-
-          {gemach.has_fee && gemach.fee_details && (
-            <div className="mb-6">
-              <h2 className="text-xl font-bold mb-2">פרטי תשלום</h2>
-              <p className="text-gray-700 whitespace-pre-line">{gemach.fee_details}</p>
-            </div>
-          )}
-
-          {gemach.location_instructions && (
-            <div className="mb-6">
-              <h2 className="text-xl font-bold mb-2">הוראות הגעה</h2>
-              <p className="text-gray-700 whitespace-pre-line">{gemach.location_instructions}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Sidebar with contact info */}
-        <div>
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-bold mb-4">פרטי יצירת קשר</h2>
+          
+          {/* תוכן הגמ״ח */}
+          <div className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <h2 className="text-xl font-bold mb-4 flex items-center">
+                  <InfoIcon className="h-5 w-5 ml-1" />
+                  על הגמ״ח
+                </h2>
+                <p className="whitespace-pre-line mb-6">{gemach.description}</p>
+                
+                {gemach.has_fee && gemach.fee_details && (
+                  <div className="mb-6">
+                    <h3 className="font-bold mb-2">פרטי תשלום</h3>
+                    <p className="whitespace-pre-line">{gemach.fee_details}</p>
+                  </div>
+                )}
+              </div>
               
               <div className="space-y-4">
-                <div className="flex items-start">
-                  <MapPin className="h-5 w-5 ml-2 mt-0.5 text-gray-500" />
-                  <div>
-                    <p className="font-medium">כתובת</p>
-                    <p className="text-gray-700">{gemach.address}</p>
-                    <p className="text-gray-700">{gemach.neighborhood}, ירושלים</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start">
-                  <Phone className="h-5 w-5 ml-2 mt-0.5 text-gray-500" />
-                  <div>
-                    <p className="font-medium">טלפון</p>
-                    <p className="text-gray-700 dir-ltr">{gemach.phone}</p>
-                    {gemach.manager_phone && (
-                      <p className="text-gray-700 dir-ltr">{gemach.manager_phone} (מנהל/ת)</p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-start">
-                  <Clock className="h-5 w-5 ml-2 mt-0.5 text-gray-500" />
-                  <div>
-                    <p className="font-medium">שעות פעילות</p>
-                    <p className="text-gray-700">{gemach.hours}</p>
-                  </div>
-                </div>
-
-                {gemach.email && (
-                  <div className="flex items-start">
-                    <Mail className="h-5 w-5 ml-2 mt-0.5 text-gray-500" />
-                    <div>
-                      <p className="font-medium">אימייל</p>
-                      <a 
-                        href={`mailto:${gemach.email}`} 
-                        className="text-primary hover:underline"
-                      >
-                        {gemach.email}
+                <div>
+                  <h2 className="text-xl font-bold mb-4">פרטי התקשרות</h2>
+                  
+                  <div className="space-y-3">
+                    <p className="flex items-center">
+                      <PhoneIcon className="h-5 w-5 ml-2" />
+                      <span className="font-semibold ml-1">טלפון:</span>
+                      <a href={`tel:${gemach.phone}`} className="text-primary hover:underline mr-2">
+                        {gemach.phone}
                       </a>
+                    </p>
+                    
+                    {gemach.manager_phone && (
+                      <p className="flex items-center">
+                        <PhoneIcon className="h-5 w-5 ml-2" />
+                        <span className="font-semibold ml-1">טלפון נוסף:</span>
+                        <a href={`tel:${gemach.manager_phone}`} className="text-primary hover:underline mr-2">
+                          {gemach.manager_phone}
+                        </a>
+                      </p>
+                    )}
+                    
+                    {gemach.email && (
+                      <p className="flex items-center">
+                        <MailIcon className="h-5 w-5 ml-2" />
+                        <span className="font-semibold ml-1">אימייל:</span>
+                        <a href={`mailto:${gemach.email}`} className="text-primary hover:underline mr-2">
+                          {gemach.email}
+                        </a>
+                      </p>
+                    )}
+                    
+                    <p className="flex items-start">
+                      <MapPinIcon className="h-5 w-5 ml-2 mt-0.5" />
+                      <span className="font-semibold ml-1">כתובת:</span>
+                      <span className="mr-2">{gemach.address}</span>
+                    </p>
+                    
+                    {gemach.location_instructions && (
+                      <p className="flex items-start">
+                        <MapPinIcon className="h-5 w-5 ml-2 mt-0.5 opacity-0" />
+                        <span className="font-semibold ml-1">הוראות הגעה:</span>
+                        <span className="mr-2 whitespace-pre-line">{gemach.location_instructions}</span>
+                      </p>
+                    )}
+                    
+                    <p className="flex items-center">
+                      <ClockIcon className="h-5 w-5 ml-2" />
+                      <span className="font-semibold ml-1">שעות פעילות:</span>
+                      <span className="mr-2">{gemach.hours}</span>
+                    </p>
+                  </div>
+                </div>
+                
+                {/* קישורים חיצוניים */}
+                {(gemach.website_url || gemach.facebook_url) && (
+                  <div className="pt-4">
+                    <h3 className="font-bold mb-3">קישורים</h3>
+                    <div className="flex flex-col gap-2">
+                      {gemach.website_url && (
+                        <a 
+                          href={gemach.website_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-primary hover:underline"
+                        >
+                          <LinkIcon className="h-4 w-4 ml-1" />
+                          אתר אינטרנט
+                        </a>
+                      )}
+                      
+                      {gemach.facebook_url && (
+                        <a 
+                          href={gemach.facebook_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-primary hover:underline"
+                        >
+                          <FacebookIcon className="h-4 w-4 ml-1" />
+                          דף פייסבוק
+                        </a>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
-
-              <div className="mt-6 flex flex-col gap-3">
-                {gemach.website_url && (
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start" 
-                    asChild
-                  >
-                    <a href={gemach.website_url} target="_blank" rel="noopener noreferrer">
-                      <Globe className="mr-2 h-4 w-4" />
-                      אתר הגמ״ח
-                    </a>
-                  </Button>
-                )}
-
-                {gemach.facebook_url && (
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start" 
-                    asChild
-                  >
-                    <a href={gemach.facebook_url} target="_blank" rel="noopener noreferrer">
-                      <Facebook className="mr-2 h-4 w-4" />
-                      עמוד פייסבוק
-                    </a>
-                  </Button>
-                )}
-
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={handleShare}
-                >
-                  <Share2 className="mr-2 h-4 w-4" />
-                  שיתוף הגמ״ח
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Reserved for future features like reviews, ratings, etc. */}
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
+      
+      <Footer />
     </div>
   );
 };
